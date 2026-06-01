@@ -10,7 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import { LayoutGroup, motion } from "framer-motion";
-import { loadMode, saveMode, type PrivacyMode } from "@/lib/storage";
+import { loadMode, saveMode } from "@/lib/storage";
+import type { PrivacyMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type PrivacyModeContextValue = {

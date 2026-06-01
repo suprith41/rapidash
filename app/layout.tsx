@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import SmokeTestPanel from "@/components/SmokeTestPanel";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -14,8 +16,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Rapidash",
-  description: "Rapidash application shell",
+  title: "Raidash",
+  description: "Privacy-first wealth tracking for Indian investors",
 };
 
 export default function RootLayout({
@@ -24,11 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
       >
-        {children}
+        <ErrorBoundary>{children}</ErrorBoundary>
+        <SmokeTestPanel />
       </body>
     </html>
   );

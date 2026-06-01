@@ -131,16 +131,17 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
         scale: isDragging ? 1.02 : 1,
         y: isDragging ? -2 : 0,
         boxShadow: isDragging
-          ? "0 0 0 1px rgba(124,58,237,0.5), 0 0 32px rgba(124,58,237,0.22)"
-          : "0 0 0 1px rgba(124,58,237,0.2)",
+          ? "0 0 0 1px rgba(99,91,255,0.42), 0 18px 48px rgba(99,91,255,0.16)"
+          : "0 0 0 1px rgba(99,91,255,0.18)",
       }}
+      style={{ willChange: "transform" }}
       className={cn(
-        "relative flex min-h-[320px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border bg-[#111118] px-6 py-8 text-center transition-colors",
-        state === "idle" && "border-dashed border-[#7c3aed]",
-        isDragging && "border-solid bg-[#171724]",
-        state === "uploading" && "cursor-not-allowed border-[#7c3aed]/55 bg-[#141420]",
-        state === "success" && "border-emerald-500/55 bg-emerald-500/[0.04]",
-        state === "error" && "border-red-500/70 bg-red-500/[0.04]"
+        "relative flex min-h-[320px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border bg-[#f6f9fc] px-6 py-8 text-center transition-colors",
+        state === "idle" && "border-dashed border-[#635bff]/45",
+        isDragging && "border-solid bg-[#635bff]/[0.04]",
+        state === "uploading" && "cursor-not-allowed border-[#635bff]/45 bg-[#635bff]/[0.04]",
+        state === "success" && "border-emerald-500/45 bg-emerald-50",
+        state === "error" && "border-red-500/45 bg-red-50"
       )}
       onClick={openFilePicker}
       onDragEnter={handleDragEnter}
@@ -170,9 +171,9 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
             initial={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="relative flex size-16 items-center justify-center rounded-full border border-[#7c3aed]/30 bg-[#7c3aed]/10">
-              <span className="absolute inset-0 rounded-full border border-[#7c3aed]/40 animate-pulse" />
-              <Loader2 className="size-7 animate-spin text-[#c4b5fd]" aria-hidden />
+            <div className="relative flex size-16 items-center justify-center rounded-full border border-[#635bff]/25 bg-[#635bff]/10">
+              <span className="absolute inset-0 rounded-full border border-[#635bff]/35 animate-pulse" />
+              <Loader2 className="size-7 animate-spin text-[#635bff]" aria-hidden />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Uploading statement</p>
@@ -190,7 +191,7 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
           >
             <motion.div
               animate={{ scale: [0.88, 1.08, 1] }}
-              className="flex size-16 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-300"
+              className="flex size-16 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
               transition={{ duration: 0.45 }}
             >
               <CheckCircle2 className="size-8" aria-hidden />
@@ -209,12 +210,12 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
             initial={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="flex size-16 items-center justify-center rounded-full border border-red-400/40 bg-red-500/10 text-red-300">
+            <div className="flex size-16 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10 text-red-600">
               <AlertCircle className="size-8" aria-hidden />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Upload failed</p>
-              <p className="mt-1 max-w-sm text-xs leading-5 text-red-200">{errorMessage}</p>
+              <p className="mt-1 max-w-sm text-xs leading-5 text-red-600">{errorMessage}</p>
             </div>
           </motion.div>
         ) : isDragging ? (
@@ -229,7 +230,7 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
             <motion.div
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-              className="flex size-16 items-center justify-center rounded-full border border-[#7c3aed]/35 bg-[#7c3aed]/12 text-[#c4b5fd]"
+              className="flex size-16 items-center justify-center rounded-full border border-[#635bff]/30 bg-[#635bff]/10 text-[#635bff]"
             >
               <UploadCloud className="size-8" aria-hidden />
             </motion.div>
@@ -247,7 +248,7 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
             initial={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.18 }}
           >
-            <div className="flex size-16 items-center justify-center rounded-full border border-[#7c3aed]/20 bg-[#7c3aed]/10 text-[#c4b5fd]">
+            <div className="flex size-16 items-center justify-center rounded-full border border-[#635bff]/20 bg-[#635bff]/10 text-[#635bff]">
               <UploadCloud className="size-8" aria-hidden />
             </div>
             <div>

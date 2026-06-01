@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -34,21 +34,21 @@ const severityStyles: Record<
   }
 > = {
   risk: {
-    border: "border-red-500/30 hover:border-red-500/55",
-    icon: "bg-red-500/10 text-red-300 ring-red-500/25",
-    glow: "shadow-[0_0_24px_rgba(239,68,68,0.10)]",
+    border: "border-red-200 hover:border-red-300",
+    icon: "bg-red-50 text-red-600 ring-red-200",
+    glow: "shadow-none",
     Icon: ShieldAlert,
   },
   warning: {
-    border: "border-amber-500/30 hover:border-amber-500/55",
-    icon: "bg-amber-500/10 text-amber-300 ring-amber-500/25",
-    glow: "shadow-[0_0_24px_rgba(245,158,11,0.10)]",
+    border: "border-amber-200 hover:border-amber-300",
+    icon: "bg-amber-50 text-amber-600 ring-amber-200",
+    glow: "shadow-none",
     Icon: AlertTriangle,
   },
   opportunity: {
-    border: "border-emerald-500/30 hover:border-emerald-500/55",
-    icon: "bg-emerald-500/10 text-emerald-300 ring-emerald-500/25",
-    glow: "shadow-[0_0_24px_rgba(16,185,129,0.10)]",
+    border: "border-emerald-200 hover:border-emerald-300",
+    icon: "bg-emerald-50 text-emerald-600 ring-emerald-200",
+    glow: "shadow-none",
     Icon: CircleDollarSign,
   },
 };
@@ -133,7 +133,7 @@ function MemoAlertBlock({
   return (
     <motion.div
       className={cn(
-        "overflow-hidden rounded-xl border bg-white/[0.025] transition-colors",
+        "overflow-hidden rounded-xl border bg-white transition-colors",
         styles.border,
         styles.glow
       )}
@@ -155,7 +155,7 @@ function MemoAlertBlock({
         </span>
 
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-foreground">
+          <span className="block truncate text-sm font-semibold text-[#0a2540]">
             {alert.title}
           </span>
           <AnimatePresence initial={false}>
@@ -190,7 +190,7 @@ function MemoAlertBlock({
             initial={{ height: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
-            <div className="border-t border-white/5 px-3 pb-4 pt-3 text-sm leading-6 text-slate-300">
+            <div className="border-t border-slate-100 px-3 pb-4 pt-3 text-sm leading-6 text-[#425466]">
               {alert.detail}
             </div>
           </motion.div>
@@ -204,18 +204,18 @@ function HealthyState() {
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-1 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-6 text-center"
+      className="flex flex-1 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-6 text-center"
       initial={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.2 }}
     >
       <div>
-        <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+        <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
           <CircleDollarSign aria-hidden className="size-5" />
         </div>
-        <p className="mt-3 text-sm font-semibold text-emerald-200">
+        <p className="mt-3 text-sm font-semibold text-emerald-700">
           Portfolio looks healthy
         </p>
-        <p className="mt-1 text-xs leading-5 text-emerald-100/80">
+        <p className="mt-1 text-xs leading-5 text-emerald-700/80">
           No major concentration, cash drag, or verification issues were detected.
         </p>
       </div>
@@ -223,7 +223,7 @@ function HealthyState() {
   );
 }
 
-export default function AIMemoCard({ holdings, ledgerSummary }: AIMemoCardProps) {
+function AIMemoCard({ holdings, ledgerSummary }: AIMemoCardProps) {
   const memoAlerts = useMemo(
     () => buildDynamicAlerts(holdings, ledgerSummary),
     [holdings, ledgerSummary]
@@ -234,15 +234,15 @@ export default function AIMemoCard({ holdings, ledgerSummary }: AIMemoCardProps)
     <section className="flex h-full min-h-[18rem] flex-col">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#635bff]">
             AI Investment Memo
           </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-[#0a2540]">
             Portfolio Signals
           </h2>
         </div>
-        <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300">
-          <span className="size-2 rounded-full bg-emerald-400 animate-[pulse_2s_ease-in-out_infinite]" />
+        <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+          <span className="size-2 rounded-full bg-emerald-500 animate-[pulse_2s_ease-in-out_infinite]" />
           Live
         </div>
       </div>
@@ -263,3 +263,5 @@ export default function AIMemoCard({ holdings, ledgerSummary }: AIMemoCardProps)
     </section>
   );
 }
+
+export default memo(AIMemoCard);

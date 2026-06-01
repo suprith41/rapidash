@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -88,9 +88,9 @@ function ChartTooltip({
   }
 
   return (
-    <div className="rounded-xl border border-[#7c3aed]/30 bg-[#0a0a0f]/95 px-3 py-2 shadow-[0_0_24px_rgba(124,58,237,0.22)] backdrop-blur-xl">
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-[0_12px_32px_rgba(0,0,0,0.08)]">
       <div className="text-xs text-muted">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-foreground">
+      <div className="mt-1 text-sm font-semibold text-[#0a2540]">
         {inrFormatter.format(Number(payload[0].value ?? 0))}
       </div>
     </div>
@@ -107,7 +107,7 @@ function ViewSwitcher({
   return (
     <div
       aria-label="Net worth chart view"
-      className="flex rounded-full border border-white/10 bg-white/[0.04] p-1"
+      className="flex rounded-full border border-slate-200 bg-[#f6f9fc] p-1"
       role="radiogroup"
     >
       {viewOptions.map((option) => {
@@ -118,7 +118,7 @@ function ViewSwitcher({
             aria-checked={isActive}
             className={cn(
               "relative rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-              isActive ? "text-white" : "text-muted hover:text-slate-200"
+              isActive ? "text-white" : "text-[#425466] hover:text-[#0a2540]"
             )}
             key={option.value}
             onClick={() => onChange(option.value)}
@@ -127,7 +127,7 @@ function ViewSwitcher({
           >
             {isActive ? (
               <motion.span
-                className="absolute inset-0 -z-10 rounded-full bg-accent-gradient shadow-[0_0_20px_rgba(124,58,237,0.36)]"
+                className="absolute inset-0 -z-10 rounded-full bg-[#635bff] shadow-[0_8px_18px_rgba(99,91,255,0.22)]"
                 layoutId="net-worth-view-pill"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
@@ -152,7 +152,7 @@ function NetWorthAreaChart({
 }) {
   const isForecast = view === "forecast";
   const gradientId = isForecast ? "forecastNetWorthGradient" : "netWorthGradient";
-  const stroke = isForecast ? "#2563eb" : "#7c3aed";
+  const stroke = isForecast ? "#2563eb" : "#635bff";
 
   return (
     <ResponsiveContainer height={280} minWidth={0} width="100%">
@@ -161,17 +161,17 @@ function NetWorthAreaChart({
           <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
             <stop
               offset="0%"
-              stopColor={isForecast ? "#2563eb" : "#7c3aed"}
-              stopOpacity={0.42}
+              stopColor={isForecast ? "#2563eb" : "#635bff"}
+              stopOpacity={0.22}
             />
             <stop
               offset="100%"
-              stopColor={isForecast ? "#2563eb" : "#7c3aed"}
+              stopColor={isForecast ? "#2563eb" : "#635bff"}
               stopOpacity={0}
             />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="#1e1e2e" strokeDasharray="3 3" vertical={false} />
+        <CartesianGrid stroke="#e6ebf1" strokeDasharray="3 3" vertical={false} />
         <XAxis
           axisLine={false}
           dataKey="date"
@@ -187,7 +187,7 @@ function NetWorthAreaChart({
         />
         <Tooltip
           content={(props) => <ChartTooltip {...props} />}
-          cursor={{ stroke: "#7c3aed33" }}
+          cursor={{ stroke: "#635bff33" }}
         />
         <Area
           dataKey="value"
@@ -205,7 +205,7 @@ function NetWorthAreaChart({
   );
 }
 
-export default function NetWorthChart({
+function NetWorthChart({
   historicalData = [],
   forecastData = [],
 }: NetWorthChartProps) {
@@ -223,10 +223,10 @@ export default function NetWorthChart({
     <div className="flex h-full min-h-[18rem] flex-col">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#635bff]">
             Portfolio
           </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-[#0a2540]">
             {viewOptions.find((option) => option.value === view)?.label}
           </h2>
         </div>
@@ -250,3 +250,5 @@ export default function NetWorthChart({
     </div>
   );
 }
+
+export default memo(NetWorthChart);
