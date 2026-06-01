@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -9,6 +9,7 @@ import {
   ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
+import type { AssetHolding, CashLedgerSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export type InvestmentAlert = {
@@ -19,32 +20,9 @@ export type InvestmentAlert = {
 };
 
 type AIMemoCardProps = {
-  alerts?: InvestmentAlert[];
+  holdings: AssetHolding[];
+  ledgerSummary: CashLedgerSummary;
 };
-
-const defaultAlerts: InvestmentAlert[] = [
-  {
-    type: "risk",
-    title: "Sector Concentration Alert",
-    summary: "Tech exposure at 47% — above safe threshold",
-    detail:
-      "Your portfolio is leaning heavily into technology. Consider trimming overweight positions or adding defensive sectors to reduce drawdown risk.",
-  },
-  {
-    type: "warning",
-    title: "Cash Drag Warning",
-    summary: "Idle cash at 23% of portfolio — inflation eroding value",
-    detail:
-      "A large cash allocation can reduce volatility, but it may also dilute long-term returns. Review upcoming liquidity needs before redeploying.",
-  },
-  {
-    type: "opportunity",
-    title: "Dividend Opportunity",
-    summary: "3 holdings due for dividend payout in next 30 days",
-    detail:
-      "Upcoming payouts could be reinvested into underweight income assets or used to rebalance without selling core holdings.",
-  },
-];
 
 const severityStyles: Record<
   InvestmentAlert["type"],
@@ -74,6 +52,72 @@ const severityStyles: Record<
     Icon: CircleDollarSign,
   },
 };
+
+function buildDynamicAlerts(
+  holdings: AssetHolding[],
+  ledgerSummary: CashLedgerSummary
+): InvestmentAlert[] {
+  const alerts: InvestmentAlert[] = [];
+  const totalHoldingsValue = holdings.reduce(
+    (sum, holding) => sum + holding.current_market_value,
+    0
+  );
+  const portfolioTotal = totalHoldingsValue + ledgerSummary.closing_cash_balance;
+
+  if (portfolioTotal > 0) {
+    const groupedValueByInitial = holdings.reduce<Record<string, number>>(
+      (groups, holding) => {
+        const groupKey = holding.ticker_symbol.trim().charAt(0).toUpperCase() || "#";
+        groups[groupKey] = (groups[groupKey] ?? 0) + holding.current_market_value;
+        return groups;
+      },
+      {}
+    );
+
+    const maxGroupShare = Object.values(groupedValueByInitial).reduce(
+      (maxShare, groupValue) => Math.max(maxShare, groupValue / portfolioTotal),
+      0
+    );
+
+    if (maxGroupShare > 0.4) {
+      alerts.push({
+        type: "risk",
+        title: "Sector Concentration Alert",
+        summary: "Sector concentration detected — review diversification",
+        detail:
+          "One ticker initial group now represents more than 40% of total portfolio value. This proxy concentration signal suggests you should review diversification across holdings.",
+      });
+    }
+
+    const idleCashRatio = ledgerSummary.closing_cash_balance / portfolioTotal;
+
+    if (idleCashRatio > 0.2) {
+      alerts.push({
+        type: "warning",
+        title: "Cash Drag Warning",
+        summary: `Idle cash at ${(idleCashRatio * 100).toFixed(1)}% of portfolio — purchasing power eroding`,
+        detail:
+          "Cash is taking up a large share of total portfolio value. Consider whether these reserves are intentional or whether capital should be redeployed.",
+      });
+    }
+  }
+
+  const lowConfidenceCount = holdings.filter(
+    (holding) => holding.confidence === "low"
+  ).length;
+
+  if (lowConfidenceCount > 0) {
+    alerts.push({
+      type: "warning",
+      title: "Audit Trail Review",
+      summary: `${lowConfidenceCount} holdings could not be verified against NSE master data — review audit trail`,
+      detail:
+        "At least one holding has low confidence. Review the extracted position against the statement audit trail before acting on the data.",
+    });
+  }
+
+  return alerts;
+}
 
 function MemoAlertBlock({
   alert,
@@ -156,8 +200,35 @@ function MemoAlertBlock({
   );
 }
 
-export default function AIMemoCard({ alerts = defaultAlerts }: AIMemoCardProps) {
-  const memoAlerts = alerts.length > 0 ? alerts : defaultAlerts;
+function HealthyState() {
+  return (
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-1 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-6 text-center"
+      initial={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.2 }}
+    >
+      <div>
+        <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+          <CircleDollarSign aria-hidden className="size-5" />
+        </div>
+        <p className="mt-3 text-sm font-semibold text-emerald-200">
+          Portfolio looks healthy
+        </p>
+        <p className="mt-1 text-xs leading-5 text-emerald-100/80">
+          No major concentration, cash drag, or verification issues were detected.
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function AIMemoCard({ holdings, ledgerSummary }: AIMemoCardProps) {
+  const memoAlerts = useMemo(
+    () => buildDynamicAlerts(holdings, ledgerSummary),
+    [holdings, ledgerSummary]
+  );
+  const hasAlerts = memoAlerts.length > 0;
 
   return (
     <section className="flex h-full min-h-[18rem] flex-col">
@@ -177,13 +248,17 @@ export default function AIMemoCard({ alerts = defaultAlerts }: AIMemoCardProps) 
       </div>
 
       <div className="mt-6 flex flex-1 flex-col gap-3">
-        {memoAlerts.map((alert, index) => (
-          <MemoAlertBlock
-            alert={alert}
-            defaultOpen={index === 0}
-            key={`${alert.type}-${alert.title}`}
-          />
-        ))}
+        {hasAlerts ? (
+          memoAlerts.map((alert, index) => (
+            <MemoAlertBlock
+              alert={alert}
+              defaultOpen={index === 0}
+              key={`${alert.type}-${alert.title}`}
+            />
+          ))
+        ) : (
+          <HealthyState />
+        )}
       </div>
     </section>
   );

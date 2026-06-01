@@ -3,17 +3,10 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useState } from "react";
+import type { AssetHolding as ParsedAssetHolding } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export type AssetHolding = {
-  ticker_symbol: string;
-  isin: string;
-  quantity: number;
-  average_buy_price: number;
-  current_market_value: number;
-  source_page: number;
-  extraction_method: "deterministic" | "llm";
-  confidence: number;
+export type AssetHolding = ParsedAssetHolding & {
   source_pdf_filename?: string;
   source_table_row?: number;
 };
@@ -31,7 +24,7 @@ const mockAssets: AssetHolding[] = [
     current_market_value: 68942.25,
     source_page: 4,
     extraction_method: "deterministic",
-    confidence: 0.98,
+    confidence: "high",
     source_pdf_filename: "consolidated-holdings-may-2026.pdf",
     source_table_row: 12,
   },
@@ -43,7 +36,7 @@ const mockAssets: AssetHolding[] = [
     current_market_value: 70326,
     source_page: 5,
     extraction_method: "llm",
-    confidence: 0.87,
+    confidence: "high",
     source_pdf_filename: "consolidated-holdings-may-2026.pdf",
     source_table_row: 18,
   },
@@ -55,7 +48,7 @@ const mockAssets: AssetHolding[] = [
     current_market_value: 54229.25,
     source_page: 6,
     extraction_method: "deterministic",
-    confidence: 0.96,
+    confidence: "high",
     source_pdf_filename: "broker-ledger-q4.pdf",
     source_table_row: 7,
   },
@@ -67,7 +60,7 @@ const mockAssets: AssetHolding[] = [
     current_market_value: 36539,
     source_page: 8,
     extraction_method: "llm",
-    confidence: 0.82,
+    confidence: "low",
     source_pdf_filename: "broker-ledger-q4.pdf",
     source_table_row: 15,
   },
@@ -89,10 +82,8 @@ const quantityFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 4,
 });
 
-function confidenceLabel(confidence: number) {
-  const normalized = confidence > 1 ? confidence : confidence * 100;
-
-  return `${Math.round(normalized)}%`;
+function confidenceLabel(confidence: ParsedAssetHolding["confidence"]) {
+  return confidence === "high" ? "High" : "Low";
 }
 
 function ExtractionBadge({
