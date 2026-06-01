@@ -1,27 +1,8 @@
-export type PrivacyMode = "cloud" | "local";
-
-export type AssetHolding = {
-  ticker_symbol: string;
-  isin: string;
-  quantity: number;
-  average_buy_price: number;
-  current_market_value: number;
-  source_page: number;
-  extraction_method: "deterministic" | "llm";
-  confidence: number;
-};
-
-export type MasterParsedPayload = {
-  metadata: {
-    statement_timestamp: string;
-    origin_broker: string;
-  };
-  holdings: AssetHolding[];
-  ledger_summary: {
-    closing_cash_balance: number;
-    cumulative_platform_fees: number;
-  };
-};
+import type {
+  AssetHolding,
+  MasterParsedPayload,
+  PrivacyMode,
+} from "@/lib/types";
 
 const SESSION_KEY = "raidash_session";
 const MODE_KEY = "raidash_mode";
@@ -32,6 +13,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isConfidence(value: unknown): value is AssetHolding["confidence"] {
+  return value === "high" || value === "low";
 }
 
 function isString(value: unknown): value is string {
@@ -57,7 +42,7 @@ function isAssetHolding(value: unknown): value is AssetHolding {
     isNumber(value.current_market_value) &&
     isNumber(value.source_page) &&
     isExtractionMethod(value.extraction_method) &&
-    isNumber(value.confidence)
+    isConfidence(value.confidence)
   );
 }
 
