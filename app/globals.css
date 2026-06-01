@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-obsidian: #0a0a0f;
+  --bg-card: #111118;
+  --border-glow: #7c3aed;
+  --accent-gradient: linear-gradient(135deg, #7c3aed, #2563eb);
+  --text-primary: #f1f5f9;
+  --text-muted: #64748b;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+    background: var(--bg-obsidian);
+  }
+
+  body {
+    min-height: 100vh;
+    color: var(--text-primary);
+    background: var(--bg-obsidian);
+    font-family: var(--font-geist-sans), Inter, sans-serif;
+  }
+}
+
+@layer utilities {
+  .dashboard-grid {
+    grid-template-areas:
+      "hero"
+      "memo"
+      "ledger";
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(320px, 0.72fr);
+      grid-template-areas:
+        "hero hero memo"
+        "ledger ledger ledger";
+    }
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
