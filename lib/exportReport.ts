@@ -12,238 +12,298 @@ type ReportDoc = jsPDF & {
 export async function exportPortfolioReport(
   session: MasterParsedPayload
 ): Promise<void> {
+  // A4 dimensions: 210mm x 297mm
   const doc = new jsPDF("p", "mm", "a4") as ReportDoc;
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
 
   const indigoRGB: [number, number, number] = [99, 91, 255];
   const darkRGB: [number, number, number] = [10, 37, 64];
   const grayRGB: [number, number, number] = [100, 116, 139];
 
-  doc.setFillColor(...indigoRGB);
-  doc.rect(0, 0, pageWidth, 20, "F");
+  // 1. Solid Top Color Header Band
+  doc.setFillColor(...darkRGB);
+  doc.rect(0, 0, pageWidth, 18, "F");
+
+  // Title branding in Header Band
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("Raidash", 14, 13);
-  doc.setFontSize(9);
+  doc.setFontSize(14);
+  doc.text("RAPIDASH PORTFOLIO REPORT", 12, 11.5);
+
   doc.setFont("helvetica", "normal");
-  doc.text("Financial clarity for investors.", 40, 13);
+  doc.setFontSize(8);
+  doc.text("Privacy-first financial clarity", 100, 11.5);
   doc.text(
     `Generated: ${new Date().toLocaleDateString("en-IN")}`,
-    pageWidth - 14,
-    13,
+    pageWidth - 12,
+    11.5,
     { align: "right" }
   );
 
+  // 2. Metadata Information Block (Y: 24 to 44)
   doc.setTextColor(...darkRGB);
-  doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
-  doc.text("Portfolio Report", 14, 35);
+  doc.setFontSize(9);
+  doc.text("STATEMENT DETAILS", 12, 26);
 
-  doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
   doc.setTextColor(...grayRGB);
-  doc.text(`Statement Date: ${session.metadata.statement_timestamp}`, 14, 44);
-  doc.text(`Broker: ${session.metadata.origin_broker}`, 14, 50);
+  doc.text(`Statement Date: ${session.metadata.statement_timestamp}`, 12, 32);
+  doc.text(`Origin Broker: ${session.metadata.origin_broker}`, 12, 37);
 
-  doc.setFillColor(245, 247, 255);
-  doc.roundedRect(14, 56, pageWidth - 28, 24, 3, 3, "F");
-  doc.setTextColor(...indigoRGB);
-  doc.setFontSize(11);
-  doc.text("Total Portfolio Value", 20, 65);
-  doc.setFontSize(20);
-  doc.setFont("helvetica", "bold");
-  const totalValue = session.holdings.reduce(
+  // Metrics Card Background
+  const cardX = 96;
+  const cardWidth = pageWidth - cardX - 12; // 210 - 96 - 12 = 102
+  doc.setFillColor(246, 248, 255);
+  doc.roundedRect(cardX, 23, cardWidth, 20, 2, 2, "F");
+
+  const holdingsValue = session.holdings.reduce(
     (sum, holding) => sum + holding.current_market_value,
-    session.ledger_summary.closing_cash_balance
+    0
   );
+  const totalValue = holdingsValue + session.ledger_summary.closing_cash_balance;
+
+  // Render Metrics
+  doc.setTextColor(...indigoRGB);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("TOTAL PORTFOLIO VALUE", cardX + 5, 28.5);
+  doc.setFontSize(13);
   doc.text(
     `₹${totalValue.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-    20,
-    75
+    cardX + 5,
+    35.5
   );
 
-  const dashboardElement = document.getElementById("portfolio-dashboard");
-  if (dashboardElement) {
+  // Render secondary metrics in card
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...darkRGB);
+  doc.text(
+    `Cash: ₹${session.ledger_summary.closing_cash_balance.toLocaleString("en-IN")}`,
+    cardX + 5,
+    40.5
+  );
+
+  const scoreText = session.health_score
+    ? `Health: ${session.health_score.score}/100 (Grade ${session.health_score.grade})`
+    : "Health: N/A";
+  doc.text(scoreText, cardX + 52, 40.5);
+
+  // 3. AI Advisor Memo Notes (Y: 48 to 68)
+  doc.setFillColor(250, 250, 252);
+  doc.setDrawColor(230, 235, 245);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(12, 47, pageWidth - 24, 22, 2, 2, "FD");
+
+  doc.setTextColor(...indigoRGB);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.text("ADVISOR MEMO & RECOMMENDATIONS", 16, 52.5);
+
+  doc.setTextColor(71, 85, 105);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+
+  const memoText = session.investment_memo
+    ? session.investment_memo.trim()
+    : "No advisor notes generated for this statement. Please review NSE holdings list and rebalancing recommendations.";
+
+  const textLines = doc.splitTextToSize(memoText, pageWidth - 32) as string[];
+  // Fit up to 3 lines
+  const memoLines = textLines.slice(0, 3);
+  let memoY = 57.5;
+  memoLines.forEach((line) => {
+    doc.text(line, 16, memoY);
+    memoY += 4.2;
+  });
+
+  // 4. Net Worth Chart (Y: 73 to 123)
+  doc.setTextColor(...darkRGB);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("PORTFOLIO VALUATION TREND (HISTORICAL / PROJECTED)", 12, 74.5);
+
+  const chartElement = document.getElementById("net-worth-chart-container");
+  let chartLoaded = false;
+  if (chartElement) {
     try {
-      const canvas = await html2canvas(dashboardElement, {
+      const canvas = await html2canvas(chartElement, {
         backgroundColor: "#ffffff",
-        scale: 1.5,
+        scale: 2.0,
         useCORS: true,
       });
       const imageData = canvas.toDataURL("image/png");
-      const imageWidth = pageWidth - 28;
-      const imageHeight = (canvas.height * imageWidth) / canvas.width;
-      const maxHeight = 90;
-      const finalHeight = Math.min(imageHeight, maxHeight);
-
-      doc.addImage(imageData, "PNG", 14, 88, imageWidth, finalHeight);
+      doc.addImage(imageData, "PNG", 12, 78, pageWidth - 24, 43);
+      chartLoaded = true;
     } catch {
-      // Ignore capture failures and continue with the text report.
+      // capture failed, fallback drawn below
     }
   }
 
-  let nextY = dashboardElement ? 190 : 95;
-
-  if (session.investment_memo) {
-    if (nextY > pageHeight - 60) {
-      doc.addPage();
-      nextY = 20;
-    }
-
-    doc.setTextColor(...darkRGB);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("AI Investment Memo", 14, nextY + 12);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+  if (!chartLoaded) {
+    // Draw placeholder card
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(12, 78, pageWidth - 24, 43, 2, 2, "F");
     doc.setTextColor(...grayRGB);
-
-    const memoWidth = pageWidth - 28;
-    const memoParagraphs = session.investment_memo
-      .split(/\n\s*\n/)
-      .map((paragraph) => paragraph.trim())
-      .filter(Boolean);
-    let memoY = nextY + 20;
-    memoParagraphs.forEach((paragraph) => {
-      const lines = doc.splitTextToSize(paragraph, memoWidth) as string[];
-      lines.forEach((line) => {
-        if (memoY > pageHeight - 18) {
-          doc.addPage();
-          memoY = 20;
-        }
-        doc.text(line, 14, memoY);
-        memoY += 5;
-      });
-      memoY += 4;
-    });
-
-    nextY = memoY + 2;
-  }
-
-  if (session.health_score) {
-    if (nextY > pageHeight - 80) {
-      doc.addPage();
-      nextY = 20;
-    }
-
-    doc.setTextColor(...darkRGB);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Portfolio Health Score", 14, nextY);
-
-    doc.setFontSize(32);
-    doc.setTextColor(...indigoRGB);
-    doc.text(`${session.health_score.score}`, 14, nextY + 17);
-    doc.setFontSize(14);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
     doc.text(
-      `/ 100  -  Grade ${session.health_score.grade}: ${session.health_score.grade_label}`,
-      32,
-      nextY + 17
+      "Net Worth Trend Graph (Interactive visualization on your Rapidash web dashboard)",
+      pageWidth / 2,
+      99.5,
+      { align: "center" }
     );
-
-    autoTable(doc, {
-      startY: nextY + 23,
-      head: [["Category", "Score", "Max", "Status"]],
-      body: session.health_score.breakdown.map((item) => [
-        item.label,
-        item.score,
-        item.max,
-        item.message,
-      ]),
-      headStyles: { fillColor: indigoRGB, textColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [248, 249, 255] },
-      styles: { fontSize: 9 },
-      margin: { left: 14, right: 14 },
-    });
-
-    nextY = doc.lastAutoTable?.finalY ?? nextY + 65;
   }
 
-  if (session.rebalancing) {
-    if (nextY > pageHeight - 60) {
-      doc.addPage();
-      nextY = 20;
-    }
+  // 5. Holdings Ledger Table (Y: 126 to 198)
+  doc.setTextColor(...darkRGB);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("PORTFOLIO ASSETS & ALLOCATIONS", 12, 127.5);
 
-    doc.setTextColor(...darkRGB);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Smart Rebalancing", 14, nextY + 12);
+  // Sort and limit holdings to fit exactly on a single page
+  const sortedHoldings = [...session.holdings].sort(
+    (a, b) => b.current_market_value - a.current_market_value
+  );
+  const maxRowsToShow = 5;
+  const holdingsToShow = sortedHoldings.slice(0, maxRowsToShow);
+  const remainingHoldings = sortedHoldings.slice(maxRowsToShow);
 
-    doc.setFontSize(10);
+  const tableBody: (string | number)[][] = [];
+  holdingsToShow.forEach((h) => {
+    const sharePct = totalValue > 0 ? (h.current_market_value / totalValue) * 100 : 0;
+    tableBody.push([
+      h.ticker_symbol,
+      h.isin,
+      h.quantity.toLocaleString("en-IN"),
+      `₹${h.average_buy_price.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+      `₹${h.current_market_value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+      `${sharePct.toFixed(1)}%`,
+    ]);
+  });
+
+  if (remainingHoldings.length > 0) {
+    const remainingValue = remainingHoldings.reduce((sum, h) => sum + h.current_market_value, 0);
+    const remainingShare = totalValue > 0 ? (remainingValue / totalValue) * 100 : 0;
+    tableBody.push([
+      `Other Holdings (${remainingHoldings.length} assets)`,
+      "-",
+      "-",
+      "-",
+      `₹${remainingValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+      `${remainingShare.toFixed(1)}%`,
+    ]);
+  }
+
+  autoTable(doc, {
+    startY: 130.5,
+    head: [["Asset Ticker", "ISIN", "Quantity", "Average Price", "Market Value", "Allocation %"]],
+    body: tableBody,
+    headStyles: { fillColor: indigoRGB, textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [248, 249, 255] },
+    styles: { fontSize: 7.5, cellPadding: 2, font: "helvetica" },
+    margin: { left: 12, right: 12 },
+  });
+
+  // Calculate coordinates below table
+  const tableFinalY = doc.lastAutoTable?.finalY ?? 174;
+  let rebalanceStartY = tableFinalY + 5;
+
+  if (rebalanceStartY > 192) {
+    // Keep it tight to fit
+    rebalanceStartY = 188;
+  }
+
+  // 6. Rebalancing & SIP Checklist (Y: rebalanceStartY to 275)
+  doc.setTextColor(...darkRGB);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("SMART ADVISORY PLAN", 12, rebalanceStartY);
+
+  // Divide remaining space into 2 columns
+  const colWidth = (pageWidth - 24 - 6) / 2; // 186 - 6 / 2 = 90
+  const col2X = 12 + colWidth + 6; // 12 + 90 + 6 = 108
+
+  // Left Column Box: Rebalancing Actions
+  doc.setFillColor(252, 252, 253);
+  doc.roundedRect(12, rebalanceStartY + 3, colWidth, 43, 1.5, 1.5, "F");
+  doc.setTextColor(...indigoRGB);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("REBALANCING SUGGESTIONS", 16, rebalanceStartY + 8.5);
+
+  if (session.rebalancing && session.rebalancing.suggestions.length > 0) {
+    const suggestions = session.rebalancing.suggestions.slice(0, 4);
+    let suggestionY = rebalanceStartY + 14.5;
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(...grayRGB);
-    doc.text(session.rebalancing.summary, 14, nextY + 19);
-
-    autoTable(doc, {
-      startY: nextY + 25,
-      head: [["Category", "Current", "Ideal", "Action"]],
-      body: session.rebalancing.suggestions.map((item) => [
-        item.category,
-        `₹${item.current_value.toLocaleString("en-IN")}`,
-        `₹${item.ideal_value.toLocaleString("en-IN")}`,
-        item.action_label,
-      ]),
-      headStyles: { fillColor: indigoRGB, textColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [248, 249, 255] },
-      styles: { fontSize: 9 },
-      margin: { left: 14, right: 14 },
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105);
+    suggestions.forEach((item) => {
+      doc.text(
+        `• ${item.category}: ${item.action_label} (Diff: ${item.difference_pct > 0 ? "+" : ""}${item.difference_pct.toFixed(0)}%)`,
+        16,
+        suggestionY
+      );
+      suggestionY += 5.5;
     });
-
-    nextY = doc.lastAutoTable?.finalY ?? nextY + 70;
-  }
-
-  if (session.sip_plan) {
-    if (nextY > pageHeight - 60) {
-      doc.addPage();
-      nextY = 20;
-    }
-
-    doc.setTextColor(...darkRGB);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("SIP Recommendations", 14, nextY + 12);
-
-    doc.setFontSize(10);
+  } else {
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
     doc.setTextColor(...grayRGB);
-    doc.text(session.sip_plan.message, 14, nextY + 19);
-
-    if (session.sip_plan.allocations.length > 0) {
-      autoTable(doc, {
-        startY: nextY + 25,
-        head: [["Fund Name", "Category", "Monthly SIP", "Months to Target"]],
-        body: session.sip_plan.allocations.map((item) => [
-          item.fund_name,
-          item.fund_category,
-          `₹${item.monthly_amount.toLocaleString("en-IN")}`,
-          `${item.months_to_target} months`,
-        ]),
-        headStyles: { fillColor: indigoRGB, textColor: [255, 255, 255] },
-        alternateRowStyles: { fillColor: [248, 249, 255] },
-        styles: { fontSize: 9 },
-        margin: { left: 14, right: 14 },
-      });
-    }
+    doc.text("Portfolio allocation is aligned. No active rebalancing needed.", 16, rebalanceStartY + 15);
   }
 
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i += 1) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(...grayRGB);
-    doc.text(
-      "Generated by Raidash - For personal use only. Not financial advice.",
-      14,
-      doc.internal.pageSize.getHeight() - 8
-    );
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - 14, doc.internal.pageSize.getHeight() - 8, {
-      align: "right",
+  // Right Column Box: SIP Actions
+  doc.setFillColor(252, 252, 253);
+  doc.roundedRect(col2X, rebalanceStartY + 3, colWidth, 43, 1.5, 1.5, "F");
+  doc.setTextColor(...indigoRGB);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("MONTHLY SIP ALLOCATIONS", col2X + 4, rebalanceStartY + 8.5);
+
+  if (session.sip_plan && session.sip_plan.allocations.length > 0) {
+    const allocations = session.sip_plan.allocations.slice(0, 4);
+    let sipY = rebalanceStartY + 14.5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105);
+    allocations.forEach((item) => {
+      // Truncate fund name to fit column
+      let fName = item.fund_name;
+      if (fName.length > 28) {
+        fName = fName.slice(0, 26) + "...";
+      }
+      doc.text(
+        `• ${fName}: ₹${item.monthly_amount.toLocaleString("en-IN")}/mo`,
+        col2X + 4,
+        sipY
+      );
+      sipY += 5.5;
     });
+  } else {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...grayRGB);
+    doc.text("No active SIP targets configured.", col2X + 4, rebalanceStartY + 15);
   }
 
-  doc.save(`raidash-report-${session.metadata.statement_timestamp}.pdf`);
+  // 7. Branded Footer (Y: 285 to 297)
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.2);
+  doc.line(12, 281.5, pageWidth - 12, 281.5);
+
+  doc.setFontSize(7);
+  doc.setTextColor(...grayRGB);
+  doc.setFont("helvetica", "normal");
+  doc.text(
+    "Generated by Rapidash - Privacy-first wealth tracking. Personal report for CA / Financial Advisor review. Not financial advice.",
+    pageWidth / 2,
+    286.5,
+    { align: "center" }
+  );
+  doc.text(`Page 1 of 1`, pageWidth - 12, 286.5, { align: "right" });
+
+  doc.save(`rapidash-report-${session.metadata.statement_timestamp.replace(/[^0-9a-zA-Z-]/g, "_")}.pdf`);
 }
