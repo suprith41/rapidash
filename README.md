@@ -1,17 +1,17 @@
-# Raidash
+# Rapidash
 
 ## Setup
 
 1. Start the backend:
 
 ```bash
-cd raidash-backend && pip install -r requirements.txt && uvicorn main:app --reload
+cd rapidash-backend && pip install -r requirements.txt && uvicorn main:app --reload
 ```
 
 2. Start the frontend:
 
 ```bash
-cd raidash-frontend && npm install && npm run dev
+cd rapidash-frontend && npm install && npm run dev
 ```
 
 ## Environment Variables
@@ -26,4 +26,4 @@ Use `.env.example` for repo sharing and leave the values empty so contributors c
 
 ## Data Files
 
-Place `nse_master.csv` in `raidash-backend/data/` so backend validation can match holdings against NSE master data.
+Place `nse_master.csv` in `rapidash-backend/data/` so backend validation can match holdings against NSE master data.

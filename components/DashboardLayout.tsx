@@ -50,12 +50,15 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       {/* Fixed Left Sidebar */}
       <aside className="w-[220px] h-full bg-white border-r border-[#e2e8f0] flex flex-col shrink-0">
         {/* Sidebar Top: Branding */}
-        <div className="p-6 border-b border-slate-100">
-          <div className="text-xl font-black text-slate-800 tracking-tight">Raidash</div>
+        <Link
+          href="/"
+          className="p-6 border-b border-slate-100 block hover:opacity-80 transition-opacity"
+        >
+          <div className="text-xl font-black text-slate-800 tracking-tight">Rapidash</div>
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
             Portfolio
           </div>
-        </div>
+        </Link>
 
         {/* Navigation Links */}
         <nav className="flex-1 py-6 space-y-1">

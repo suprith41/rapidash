@@ -8,7 +8,7 @@ from routers import analyze, ingest
 load_dotenv(override=False)
 
 
-app = FastAPI(title="Raidash Backend")
+app = FastAPI(title="Rapidash Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,4 +24,4 @@ app.include_router(analyze.router, prefix="/api/analyze", tags=["analyze"])
 
 @app.get("/")
 def health_check() -> dict[str, str]:
-    return {"status": "raidash backend online"}
+    return {"status": "rapidash backend online"}

@@ -3,7 +3,7 @@ import type {
   MasterParsedPayload,
 } from "@/lib/types";
 
-const SESSION_KEY = "raidash_session";
+const SESSION_KEY = "rapidash_session";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

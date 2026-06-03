@@ -89,7 +89,7 @@ export default function ChatPage() {
       const session_json = JSON.stringify(session);
       const systemMessage = {
         role: "system",
-        content: `You are Dash, a friendly AI portfolio advisor for Raidash.
+        content: `You are Dash, a friendly AI portfolio advisor for Rapidash.
 You have access to the user's portfolio data: ${session_json}
 Keep responses concise — max 3 short paragraphs.
 Use ₹ for currency. Be specific about their actual holdings.

@@ -348,7 +348,7 @@ export default function HeroMockup() {
           </div>
           {/* URL bar */}
           <div className="flex-1 max-w-lg bg-slate-50 border border-slate-100 rounded-lg text-center py-1.5 text-xs sm:text-sm text-slate-400 select-none">
-            raidash.app/dashboard
+            rapidash.app/dashboard
           </div>
           {/* empty space to balance dots */}
           <div className="w-16" />

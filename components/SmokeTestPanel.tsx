@@ -124,7 +124,7 @@ export default function SmokeTestPanel() {
       };
 
       try {
-        const storageKey = "raidash_smoke_storage";
+        const storageKey = "rapidash_smoke_storage";
         window.localStorage.setItem(storageKey, "ok");
         const value = window.localStorage.getItem(storageKey);
         window.localStorage.removeItem(storageKey);

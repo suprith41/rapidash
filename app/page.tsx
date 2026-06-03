@@ -86,7 +86,7 @@ function ScrollHighlightAbout() {
   }, []);
 
   const aboutText =
-    "Raidash turns static broker statements into interactive, secure portfolios. It runs structured AI extractions locally on your device, providing clear provenance and audit trails. By parsing NSE and BSE broker PDFs directly, Raidash gives you instant advisor-style memos, smart rebalancing maps, and monthly SIP optimizers. Zero servers store your data, ensuring complete financial privacy.";
+    "Rapidash turns static broker statements into interactive, secure portfolios. It runs structured AI extractions locally on your device, providing clear provenance and audit trails. By parsing NSE and BSE broker PDFs directly, Rapidash gives you instant advisor-style memos, smart rebalancing maps, and monthly SIP optimizers. Zero servers store your data, ensuring complete financial privacy.";
 
   const words = aboutText.split(" ");
   const totalWords = words.length;
@@ -110,7 +110,7 @@ function ScrollHighlightAbout() {
       <div className="sticky top-0 flex h-screen flex-col justify-center max-w-[1280px] mx-auto py-12">
         <div className="max-w-4xl">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#635bff] mb-4">
-            About Raidash
+            About Rapidash
           </p>
 
           <div className="min-h-[16rem] md:min-h-[14rem]">
@@ -248,7 +248,7 @@ export default function Home() {
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[#425466] sm:text-lg">
               Drop your Indian broker statement (NSE/BSE) to get instant local portfolio insights,
-              dividend forecasts, and audit trails. Raidash runs fully private, local extraction
+              dividend forecasts, and audit trails. Rapidash runs fully private, local extraction
               with clear provenance and complete data ownership.
             </p>
             <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
@@ -333,7 +333,7 @@ export default function Home() {
             <div className="flex flex-col gap-8 border-b border-slate-100 pb-8 md:flex-row md:items-start md:justify-between">
               <div>
                 <div className="text-xl font-bold tracking-[-0.03em] text-[#0a2540]">
-                  Raidash
+                  Rapidash
                 </div>
                 <p className="mt-2 text-sm text-[#425466]">
                   Built for privacy-conscious Indian investors
@@ -341,7 +341,7 @@ export default function Home() {
               </div>
             </div>
             <p className="pt-8 text-sm text-[#697386]">
-              © {new Date().getFullYear()} Raidash. All rights reserved.
+              © {new Date().getFullYear()} Rapidash. All rights reserved.
             </p>
           </div>
         </footer>

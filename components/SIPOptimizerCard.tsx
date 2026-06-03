@@ -107,7 +107,7 @@ function buildSipPlan(
   const allocations: SipAllocation[] = [];
 
   buySuggestions.forEach((suggestion) => {
-    const categoryKey = suggestion.category.toLowerCase().replace(" ", "_");
+    const categoryKey = suggestion.category.toLowerCase().replace(/ /g, "_");
     const weight = totalDeficit > 0 ? Math.abs(suggestion.difference) / totalDeficit : 0;
     let monthlyAmount = Math.round((monthlyBudget * weight) / 100) * 100;
     monthlyAmount = Math.max(monthlyAmount, 500);

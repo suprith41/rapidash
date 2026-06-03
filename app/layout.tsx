@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import SmokeTestPanel from "@/components/SmokeTestPanel";
 import { SessionProvider } from "@/contexts/SessionContext";
 import "./globals.css";
 
@@ -17,7 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Raidash",
+  title: "Rapidash",
   description: "Privacy-first wealth tracking for Indian investors",
 };
 
@@ -33,7 +32,6 @@ export default function RootLayout({
       >
         <SessionProvider>
           <ErrorBoundary>{children}</ErrorBoundary>
-          <SmokeTestPanel />
         </SessionProvider>
       </body>
     </html>

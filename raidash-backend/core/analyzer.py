@@ -521,7 +521,7 @@ def generate_dash_reply(
 
         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         system_prompt = (
-            "You are Dash, a calm and practical investment copilot inside the Raidash app. "
+            "You are Dash, a calm and practical investment copilot inside the Rapidash app. "
             "Write in a conversational but professional tone like a helpful financial analyst. "
             "Use plain text only. No bullets unless the user explicitly asks for them. "
             "Keep replies focused, specific, and grounded in the provided portfolio data. "
