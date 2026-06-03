@@ -46,7 +46,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans bg-gradient-to-br from-[#f5f3ff] via-[#eef2ff] to-[#e0e7ff]">
+    <div className="flex h-screen w-screen overflow-hidden font-sans bg-gradient-to-br from-[#eef2ff] via-[#e0e7ff] to-[#c7d2fe]">
       {/* Fixed Left Sidebar */}
       <aside className="w-[220px] h-full bg-white border-r border-[#e2e8f0] flex flex-col shrink-0">
         {/* Sidebar Top: Branding */}

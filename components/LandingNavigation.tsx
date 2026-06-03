@@ -26,7 +26,7 @@ export default function LandingNavigation({
   return (
     <motion.header
       animate={{ y: 0, opacity: 1 }}
-      className="fixed inset-x-0 top-0 z-50 border-b border-white/70 bg-white/90 backdrop-blur-xl"
+      className="fixed inset-x-0 top-0 z-50 border-b border-white/30 bg-white/40 backdrop-blur-md shadow-[0_4px_30px_rgba(99,91,255,0.04)]"
       initial={{ y: -12, opacity: 0 }}
       transition={{ duration: 0.35 }}
     >
