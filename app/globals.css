@@ -19,13 +19,13 @@
 
   html {
     color-scheme: light;
-    background: var(--bg-obsidian);
+    background: linear-gradient(135deg, #fcfbff 0%, #f5f3ff 50%, #eef2ff 100%);
   }
 
   body {
     min-height: 100vh;
     color: var(--text-primary);
-    background: var(--bg-obsidian);
+    background: linear-gradient(135deg, #fcfbff 0%, #f5f3ff 50%, #eef2ff 100%);
     font-family: var(--font-geist-sans), Inter, sans-serif;
   }
 }

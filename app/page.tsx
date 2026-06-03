@@ -103,7 +103,7 @@ function ScrollHighlightAbout() {
   return (
     <section
       ref={containerRef}
-      className="relative bg-[#f6f9fc] px-6"
+      className="relative bg-[#f5f3ff]/40 backdrop-blur-sm px-6"
       style={{ minHeight: "220vh" }}
       id="about"
     >
@@ -234,8 +234,8 @@ export default function Home() {
     <>
       <LandingNavigation onUploadClick={handleUploadClick} onSectionClick={scrollToSection} />
 
-      <main className="bg-white font-sans text-[#0a2540]">
-        <section className="overflow-hidden bg-white px-6 pb-20 pt-36 sm:pt-44">
+      <main className="bg-gradient-to-br from-[#fcfbff] via-[#f5f3ff] to-[#eef2ff] font-sans text-[#0a2540]">
+        <section className="overflow-hidden bg-transparent px-6 pb-20 pt-36 sm:pt-44">
           <motion.div
             animate="visible"
             className="mx-auto max-w-[1280px] text-center"
@@ -275,7 +275,7 @@ export default function Home() {
 
         <ScrollHighlightAbout />
 
-        <section className="bg-white px-6 py-24" id="workflow">
+        <section className="bg-transparent px-6 py-24" id="workflow">
           <motion.div
             className="mx-auto max-w-[1280px]"
             initial="hidden"
@@ -328,7 +328,7 @@ export default function Home() {
           </motion.div>
         </section>
 
-        <footer className="border-t border-slate-200 bg-white px-6 py-10">
+        <footer className="border-t border-slate-200/50 bg-transparent px-6 py-10">
           <div className="mx-auto max-w-[1280px]">
             <div className="flex flex-col gap-8 border-b border-slate-100 pb-8 md:flex-row md:items-start md:justify-between">
               <div>
