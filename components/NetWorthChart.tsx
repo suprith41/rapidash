@@ -197,9 +197,7 @@ export default function NetWorthChart({
                 dataKey="date"
                 tickLine={false}
                 tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 500 }}
-                tickFormatter={(date) =>
-                  ["Jan", "Mar", "May", "Jul", "Sep", "Nov"].includes(date) || isForecast ? date : ""
-                }
+                tickFormatter={(date) => date}
                 padding={{ left: 10, right: 10 }}
               />
 
