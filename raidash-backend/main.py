@@ -1,7 +1,11 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import analyze, ingest
+
+# Load .env early so GROQ_API_KEY and other secrets are available to all modules.
+load_dotenv(override=False)
 
 
 app = FastAPI(title="Raidash Backend")
@@ -14,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ingest.router, prefix="/api/ingest", tags=["ingest"])
+app.include_router(ingest.router, prefix="/api", tags=["ingest"])
 app.include_router(analyze.router, prefix="/api/analyze", tags=["analyze"])
 
 

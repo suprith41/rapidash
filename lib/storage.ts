@@ -1,11 +1,9 @@
 import type {
   AssetHolding,
   MasterParsedPayload,
-  PrivacyMode,
 } from "@/lib/types";
 
 const SESSION_KEY = "raidash_session";
-const MODE_KEY = "raidash_mode";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -94,23 +92,5 @@ export function clearSession(): void {
     window.localStorage.removeItem(SESSION_KEY);
   } catch {
     // Ignore storage failures so callers can use this from mixed SSR/client paths.
-  }
-}
-
-export function saveMode(mode: PrivacyMode): void {
-  try {
-    window.localStorage.setItem(MODE_KEY, mode);
-  } catch {
-    // Ignore storage failures; the in-memory UI state can still proceed.
-  }
-}
-
-export function loadMode(): PrivacyMode {
-  try {
-    const mode = window.localStorage.getItem(MODE_KEY);
-
-    return mode === "cloud" || mode === "local" ? mode : "local";
-  } catch {
-    return "local";
   }
 }

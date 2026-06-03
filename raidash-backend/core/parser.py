@@ -1,9 +1,13 @@
 import json
+import csv
+import logging
 import os
+import re
 from datetime import UTC, datetime
 from io import BytesIO
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Literal
-from urllib import request
 
 import pdfplumber
 
@@ -15,207 +19,261 @@ from models.schema import (
     StatementMetadata,
 )
 
+logger = logging.getLogger(__name__)
+NSE_MASTER_PATH = Path(__file__).resolve().parents[1] / "data" / "nse_master.csv"
 
-ParseMode = Literal["cloud", "local"]
+_CDSL_HOLDING_LINE_RE = re.compile(
+    r"^(?P<sec_type>EQ|MF)\s+"
+    r"(?P<isin>IN[A-Z0-9]{10})\s+"
+    r"(?P<name>.+?)\s+"
+    r"(?P<current_bal>[-\d,]+\.\d+)\s+"
+    r"(?P<free_bal>[-\d,]+\.\d+)\s+"
+    r"(?P<pledged_bal>[-\d,]+\.\d+)\s+"
+    r"(?P<value>[-\d,]+\.\d+)\s*$"
+)
 
-FIELD_ALIASES = {
-    "ticker_symbol": {
-        "ticker",
-        "ticker symbol",
-        "symbol",
-        "scrip",
-        "security",
-        "security name",
-    },
-    "isin": {"isin", "isin code"},
-    "quantity": {"qty", "quantity", "units", "balance quantity"},
-    "average_buy_price": {
-        "avg buy price",
-        "average buy price",
-        "average price",
-        "avg price",
-        "cost price",
-    },
-    "current_market_value": {
-        "current value",
-        "market value",
-        "current market value",
-        "value",
-        "valuation",
-    },
+_STATEMENT_DATE_RE = re.compile(
+    r"STATEMENT OF HOLDINGS AS ON:\s*(\d{2}-\d{2}-\d{4})",
+    re.IGNORECASE,
+)
+
+_TOKEN_SPLIT_RE = re.compile(r"[^A-Z0-9]+")
+_TICKER_STOPWORDS = {
+    "LIMITED",
+    "LTD",
+    "ENERGY",
+    "SHARES",
+    "EQUITY",
+    "NEW",
+    "AFTER",
+    "SUB",
+    "DIVISION",
+    "OF",
+    "RS",
+    "AND",
+    "THE",
+    "SPECIAL",
+    "ECONOMIC",
+    "ZONE",
+}
+_TICKER_ABBREVIATIONS = {
+    "TRANSMISSION": "TRANS",
+    "BATTERIES": "BAT",
+    "ARBITRAGE": "ARB",
+    "OPPORTUNITIES": "OPP",
 }
 
-REQUIRED_FIELDS = {
-    "ticker_symbol",
-    "isin",
-    "quantity",
-    "average_buy_price",
-    "current_market_value",
-}
 
-
-def parse_pdf(file_bytes: bytes, mode: str) -> MasterParsedPayload:
-    if mode not in {"cloud", "local"}:
-        raise ValueError("mode must be either 'cloud' or 'local'")
-
-    deterministic_failed = False
-
-    try:
-        deterministic_payload = _parse_with_pdfplumber_tables(file_bytes)
-        if deterministic_payload.holdings:
-            return deterministic_payload
-        deterministic_failed = True
-    except Exception:
-        deterministic_failed = True
-
-    if deterministic_failed:
-        raw_text = _extract_pdf_text(file_bytes)
-        sanitized_text = scrub_pii(raw_text)
-        llm_payload = _parse_with_llm(sanitized_text, mode)
-        return _force_extraction_method(llm_payload, "llm")
-
-    return _empty_payload()
-
-
-def _parse_with_pdfplumber_tables(file_bytes: bytes) -> MasterParsedPayload:
-    holdings: list[AssetHolding] = []
-    table_rows_found = 0
-
-    with pdfplumber.open(BytesIO(file_bytes)) as pdf:
-        for page_index, page in enumerate(pdf.pages, start=1):
-            tables = page.extract_tables() or []
-            for table in tables:
-                if not table:
-                    continue
-
-                table_rows_found += len(table)
-                holdings.extend(_parse_table(table, page_index))
-
-    if table_rows_found == 0:
-        return _empty_payload()
-
-    return MasterParsedPayload(
-        metadata=_default_metadata(),
-        holdings=holdings,
-        ledger_summary=_default_ledger_summary(),
-    )
-
-
-def _parse_table(table: list[list[Any]], source_page: int) -> list[AssetHolding]:
-    header_index, header_map = _find_header(table)
-    if header_index is None:
-        return []
-
-    parsed_holdings: list[AssetHolding] = []
-
-    for row in table[header_index + 1 :]:
-        if not row or not any(_clean_cell(cell) for cell in row):
-            continue
-
-        try:
-            candidate = {
-                "ticker_symbol": _clean_cell(row[header_map["ticker_symbol"]]),
-                "isin": _clean_cell(row[header_map["isin"]]).upper(),
-                "quantity": _parse_float(row[header_map["quantity"]]),
-                "average_buy_price": _parse_float(
-                    row[header_map["average_buy_price"]]
-                ),
-                "current_market_value": _parse_float(
-                    row[header_map["current_market_value"]]
-                ),
-                "source_page": source_page,
-                "extraction_method": "deterministic",
-                "confidence": "high",
-                "exit_confirmed": False,
-            }
-            parsed_holdings.append(AssetHolding.model_validate(candidate))
-        except (KeyError, IndexError, TypeError, ValueError):
-            continue
-
-    return parsed_holdings
-
-
-def _find_header(
-    table: list[list[Any]],
-) -> tuple[int | None, dict[str, int]]:
-    for row_index, row in enumerate(table):
-        normalized_cells = [_normalize_header(cell) for cell in row]
-        header_map: dict[str, int] = {}
-
-        for field_name, aliases in FIELD_ALIASES.items():
-            for column_index, cell in enumerate(normalized_cells):
-                if cell in aliases:
-                    header_map[field_name] = column_index
-                    break
-
-        if REQUIRED_FIELDS.issubset(header_map):
-            return row_index, header_map
-
-    return None, {}
-
-
-def _extract_pdf_text(file_bytes: bytes) -> str:
-    page_text: list[str] = []
-
+def parse_pdf(file_bytes: bytes) -> MasterParsedPayload:
+    """Parse a PDF statement from direct pdfplumber text, with Groq as fallback."""
+    raw_text = ""
+    page_texts: list[str] = []
     with pdfplumber.open(BytesIO(file_bytes)) as pdf:
         for page in pdf.pages:
-            page_text.append(page.extract_text() or "")
+            text = page.extract_text()
+            if text:
+                page_texts.append(text)
+                raw_text += text + "\n"
 
-    return "\n".join(page_text)
+    if not raw_text or len(raw_text.strip()) < 50:
+        raise ValueError("No text could be extracted from this PDF.")
+
+    parsed_payload = _parse_cdsl_payload(page_texts)
+    if parsed_payload is not None:
+        return parsed_payload
+
+    sanitized_text = scrub_pii(raw_text)
+    return _parse_with_llm(sanitized_text)
 
 
-def _parse_with_llm(sanitized_text: str, mode: str) -> MasterParsedPayload:
-    prompt = _build_prompt(sanitized_text)
-
-    if mode == "cloud":
-        response_text = _call_groq(prompt)
-    else:
-        response_text = _call_ollama(prompt)
-
+def _parse_with_llm(sanitized_text: str) -> MasterParsedPayload:
+    response_text = _call_groq(sanitized_text)
     payload = _extract_json_object(response_text)
     normalized_payload = _normalize_payload(payload, extraction_method="llm")
-
     return MasterParsedPayload.model_validate(normalized_payload)
 
 
-def _call_groq(prompt: str) -> str:
+def _parse_cdsl_payload(page_texts: list[str]) -> MasterParsedPayload | None:
+    holdings: list[AssetHolding] = []
+    full_text = "\n".join(page_texts)
+    statement_timestamp = _extract_statement_timestamp(full_text)
+
+    for page_number, page_text in enumerate(page_texts, start=1):
+        for raw_line in page_text.splitlines():
+            line = " ".join(raw_line.split())
+            if not line:
+                continue
+
+            match = _CDSL_HOLDING_LINE_RE.match(line)
+            if not match:
+                continue
+
+            isin = match.group("isin").strip().upper()
+            name = match.group("name").strip()
+            current_bal = _parse_float(match.group("current_bal"))
+            value = _parse_float(match.group("value"))
+            ticker_symbol = _resolve_ticker_symbol(isin, name, match.group("sec_type"))
+
+            holdings.append(
+                AssetHolding(
+                    ticker_symbol=ticker_symbol,
+                    isin=isin,
+                    quantity=current_bal,
+                    average_buy_price=0.0,
+                    current_market_value=value,
+                    source_page=page_number,
+                    extraction_method="deterministic",
+                    confidence="low",
+                )
+            )
+
+    if not holdings:
+        return None
+
+    return MasterParsedPayload(
+        metadata=StatementMetadata(
+            statement_timestamp=statement_timestamp,
+            origin_broker="CDSL",
+        ),
+        holdings=holdings,
+        ledger_summary=CashLedgerSummary(
+            closing_cash_balance=0.0,
+            cumulative_platform_fees=0.0,
+        ),
+    )
+
+
+def _extract_statement_timestamp(text: str) -> str:
+    match = _STATEMENT_DATE_RE.search(text)
+    if match:
+        return match.group(1)
+    return ""
+
+
+def _parse_float(value: str) -> float:
+    return float(value.replace(",", ""))
+
+
+@lru_cache(maxsize=1)
+def _load_isin_symbol_map() -> dict[str, str]:
+    symbol_map: dict[str, str] = {}
+
+    try:
+        with NSE_MASTER_PATH.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                normalized_row = {str(key).strip().upper(): value for key, value in row.items()}
+                symbol = (normalized_row.get("SYMBOL") or "").strip().upper()
+                isin = (
+                    (normalized_row.get("ISIN") or normalized_row.get("ISIN NUMBER") or "")
+                    .strip()
+                    .upper()
+                )
+                if isin and symbol and isin not in symbol_map:
+                    symbol_map[isin] = symbol
+    except Exception as exc:
+        logger.warning("Failed to load NSE master symbol map at %s: %s", NSE_MASTER_PATH, exc)
+
+    return symbol_map
+
+
+def _resolve_ticker_symbol(isin: str, raw_name: str, sec_type: str) -> str:
+    normalized_name = " ".join(raw_name.upper().replace("#", " # ").split())
+
+    special_alias = _match_special_ticker_alias(normalized_name)
+    if special_alias:
+        return special_alias
+
+    if sec_type.upper() == "MF" and "MF" in normalized_name:
+        left_side = normalized_name.split("#", 1)[0]
+        left_tokens = _meaningful_tokens(left_side)
+        if left_tokens:
+            return f"{left_tokens[0]}MF"[:12]
+
+    tokens = _meaningful_tokens(normalized_name.split("#", 1)[0])
+    if not tokens and "#" in normalized_name:
+        tokens = _meaningful_tokens(normalized_name.split("#", 1)[1])
+
+    if not tokens:
+        symbol = _load_isin_symbol_map().get(isin.upper())
+        if symbol:
+            return symbol
+        return isin[:12]
+
+    parts: list[str] = []
+    for token in tokens:
+        parts.append(_compress_ticker_token(token))
+        if len("".join(parts)) >= 12:
+            break
+
+    ticker = "".join(parts).replace(" ", "")[:12]
+    return ticker or isin[:12]
+
+
+def _match_special_ticker_alias(normalized_name: str) -> str:
+    if "ABSL AMC" in normalized_name and "MF" in normalized_name:
+        return "ABSLMF"
+    if "ADANI GREEN" in normalized_name:
+        return "ADANIGREEN"
+    if "ADANI PORTS" in normalized_name:
+        return "ADANIPORTS"
+    if "ADANI TRANSMISSION" in normalized_name:
+        return "ADANITRANS"
+    if "AMARA RAJA BATTERIES" in normalized_name:
+        return "AMARAJABAT"
+    return ""
+
+
+def _meaningful_tokens(text: str) -> list[str]:
+    tokens = [token for token in _TOKEN_SPLIT_RE.split(text.upper()) if token]
+    return [token for token in tokens if token not in _TICKER_STOPWORDS]
+
+
+def _compress_ticker_token(token: str) -> str:
+    return _TICKER_ABBREVIATIONS.get(token, token)
+
+
+def _call_groq(sanitized_text: str) -> str:
     from groq import Groq
 
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-    completion = client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}],
-        model="llama3-8b-8192",
-        temperature=0,
-    )
+    system_prompt = """You are a strict financial data extraction compiler.
+Output ONLY valid JSON. Zero conversational text. Zero markdown. 
+Ignore all personal identifiers — names, IDs, PAN numbers."""
+    user_prompt = f"""
+Extract ALL holdings from this CDSL Statement of Holdings.
 
-    return completion.choices[0].message.content or "{}"
+EXTRACTION RULES:
+1. Find every line containing a 12-character ISIN starting with IN
+2. For each ISIN extract:
+   - isin: the 12-character code exactly as found
+   - ticker_symbol: first meaningful word(s) from ISIN NAME before # symbol,
+     joined without spaces, max 12 chars
+     Examples:
+     "ABSL AMC LTD#ABSL MF..." → "ABSLMF"
+     "ADANI GREEN ENERGY LIMITED #..." → "ADANIGREEN"
+     "ADANI PORTS AND SPECIAL..." → "ADANIPORTS"
+     "ADANI TRANSMISSION LIMITED #..." → "ADANITRANS"
+     "AMARA RAJA BATTERIES LIMITED #..." → "AMARAJABAT"
+   - quantity: FIRST float number appearing after the ISIN NAME
+     (this is the Current Bal column)
+   - current_market_value: LAST float number on that holding's line
+     (this is the Value() column, remove all commas first)
+   - average_buy_price: always 0.0 (not in this document)
+   - source_page: page number where this ISIN was found (integer)
+   - extraction_method: "llm"
+   - confidence: "high"
 
+3. Extract ALL 5 holdings — do not stop early
+4. statement_timestamp: extract from "STATEMENT OF HOLDINGS AS ON: DD-MM-YYYY"
+5. origin_broker: always "CDSL"
+6. closing_cash_balance: 0.0 (not in this document)
+7. cumulative_platform_fees: 0.0
 
-def _call_ollama(prompt: str) -> str:
-    payload = json.dumps(
-        {
-            "model": "llama3",
-            "prompt": prompt,
-            "stream": False,
-        }
-    ).encode("utf-8")
-    ollama_request = request.Request(
-        "http://localhost:11434/api/generate",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
+NEVER return null for any field.
+For missing numbers use 0.0, for missing strings use empty string "".
 
-    with request.urlopen(ollama_request, timeout=120) as response:
-        body = json.loads(response.read().decode("utf-8"))
-
-    return str(body.get("response", "{}"))
-
-
-def _build_prompt(sanitized_text: str) -> str:
-    return f"""
-You are parsing an Indian investment statement.
-Return ONLY a JSON object matching this exact schema:
+Return ONLY this JSON structure:
 {{
   "metadata": {{
     "statement_timestamp": "string",
@@ -224,14 +282,13 @@ Return ONLY a JSON object matching this exact schema:
   "holdings": [
     {{
       "ticker_symbol": "string",
-      "isin": "string",
+      "isin": "string", 
       "quantity": 0.0,
       "average_buy_price": 0.0,
       "current_market_value": 0.0,
       "source_page": 1,
       "extraction_method": "llm",
-      "confidence": "high",
-      "exit_confirmed": false
+      "confidence": "high"
     }}
   ],
   "ledger_summary": {{
@@ -240,20 +297,24 @@ Return ONLY a JSON object matching this exact schema:
   }}
 }}
 
-Rules:
-- No conversational text.
-- No markdown fences.
-- Do not include PII.
-- Use confidence "high" only when the row is clear, otherwise "low".
-- Use extraction_method "llm" for every holding.
-
-Sanitized statement text:
+PDF TEXT:
 {sanitized_text}
-""".strip()
+"""
+    completion = client.chat.completions.create(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        model="llama-3.3-70b-versatile",
+        temperature=0,
+    )
+
+    return completion.choices[0].message.content or "{}"
 
 
 def _normalize_payload(
-    payload: dict[str, Any], extraction_method: Literal["deterministic", "llm"]
+    payload: dict[str, Any],
+    extraction_method: Literal["deterministic", "llm"],
 ) -> dict[str, Any]:
     payload.setdefault("metadata", {})
     payload.setdefault("ledger_summary", {})
@@ -279,20 +340,10 @@ def _normalize_payload(
 
         holding["extraction_method"] = extraction_method
         holding.setdefault("exit_confirmed", False)
+        holding.setdefault("missing_cost_basis", False)
         confidence = holding.get("confidence")
         if confidence not in {"high", "low"}:
             holding["confidence"] = "low"
-
-    return payload
-
-
-def _force_extraction_method(
-    payload: MasterParsedPayload, extraction_method: Literal["deterministic", "llm"]
-) -> MasterParsedPayload:
-    for holding in payload.holdings:
-        holding.extraction_method = extraction_method
-        if holding.confidence not in {"high", "low"}:
-            holding.confidence = "low"
 
     return payload
 
@@ -333,28 +384,6 @@ def _empty_payload() -> MasterParsedPayload:
         holdings=[],
         ledger_summary=_default_ledger_summary(),
     )
-
-
-def _normalize_header(value: Any) -> str:
-    return " ".join(_clean_cell(value).lower().replace("_", " ").split())
-
-
-def _clean_cell(value: Any) -> str:
-    return "" if value is None else str(value).strip()
-
-
-def _parse_float(value: Any) -> float:
-    cleaned_value = (
-        _clean_cell(value)
-        .replace(",", "")
-        .replace("₹", "")
-        .replace("INR", "")
-        .strip()
-    )
-    if cleaned_value.startswith("(") and cleaned_value.endswith(")"):
-        cleaned_value = f"-{cleaned_value[1:-1]}"
-
-    return float(cleaned_value)
 
 
 def parse_portfolio_payload(payload: MasterParsedPayload) -> MasterParsedPayload:

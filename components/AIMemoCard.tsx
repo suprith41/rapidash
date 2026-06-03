@@ -22,6 +22,7 @@ export type InvestmentAlert = {
 type AIMemoCardProps = {
   holdings: AssetHolding[];
   ledgerSummary: CashLedgerSummary;
+  investmentMemo?: string | null;
 };
 
 const severityStyles: Record<
@@ -223,12 +224,27 @@ function HealthyState() {
   );
 }
 
-function AIMemoCard({ holdings, ledgerSummary }: AIMemoCardProps) {
+function AIMemoCard({
+  holdings,
+  ledgerSummary,
+  investmentMemo,
+}: AIMemoCardProps) {
   const memoAlerts = useMemo(
     () => buildDynamicAlerts(holdings, ledgerSummary),
     [holdings, ledgerSummary]
   );
   const hasAlerts = memoAlerts.length > 0;
+  const memoParagraphs = useMemo(
+    () =>
+      investmentMemo
+        ? investmentMemo
+            .split(/\n\s*\n/)
+            .map((paragraph) => paragraph.trim())
+            .filter(Boolean)
+        : [],
+    [investmentMemo]
+  );
+  const hasMemo = memoParagraphs.length > 0;
 
   return (
     <section className="flex h-full min-h-[18rem] flex-col">
@@ -238,7 +254,7 @@ function AIMemoCard({ holdings, ledgerSummary }: AIMemoCardProps) {
             AI Investment Memo
           </p>
           <h2 className="mt-2 text-xl font-bold tracking-tight text-[#0a2540]">
-            Portfolio Signals
+            Advisor Notes
           </h2>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
@@ -247,15 +263,35 @@ function AIMemoCard({ holdings, ledgerSummary }: AIMemoCardProps) {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-1 flex-col gap-3">
+      <div className="mt-6 flex flex-1 flex-col gap-4">
+        {hasMemo ? (
+          <motion.div
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl border border-[#e8ebff] bg-[#f7f8ff] p-4 shadow-sm"
+            initial={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.25 }}
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#635bff]">
+              Portfolio Memo
+            </p>
+            <div className="mt-3 space-y-3 text-sm leading-7 text-[#425466]">
+              {memoParagraphs.map((paragraph, index) => (
+                <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
+              ))}
+            </div>
+          </motion.div>
+        ) : null}
+
         {hasAlerts ? (
-          memoAlerts.map((alert, index) => (
-            <MemoAlertBlock
-              alert={alert}
-              defaultOpen={index === 0}
-              key={`${alert.type}-${alert.title}`}
-            />
-          ))
+          <div className="flex flex-col gap-3">
+            {memoAlerts.map((alert, index) => (
+              <MemoAlertBlock
+                alert={alert}
+                defaultOpen={index === 0 && !hasMemo}
+                key={`${alert.type}-${alert.title}`}
+              />
+            ))}
+          </div>
         ) : (
           <HealthyState />
         )}

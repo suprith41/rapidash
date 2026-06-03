@@ -1,7 +1,6 @@
 import type {
   AnalyzeResponse,
   MasterParsedPayload,
-  PrivacyMode,
   TransactionLedgerEntry,
 } from "@/lib/types";
 
@@ -66,13 +65,9 @@ async function parseJsonResponse<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-export async function ingestPDF(
-  file: File,
-  mode: PrivacyMode
-): Promise<MasterParsedPayload> {
+export async function ingestPDF(file: File): Promise<MasterParsedPayload> {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("mode", mode);
 
   const response = await fetch(`${API_BASE_URL}/api/ingest`, {
     method: "POST",

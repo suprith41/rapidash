@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, ChevronUp, Circle, XCircle } from "lucide-react";
-import { loadMode, loadSession } from "@/lib/storage";
+import { loadSession } from "@/lib/storage";
 import type { MasterParsedPayload } from "@/lib/types";
 
 type CheckStatus = "pending" | "pass" | "fail";
@@ -13,8 +13,7 @@ type SmokeTestResult = {
     | "storage"
     | "apiUrl"
     | "backend"
-    | "sessionShape"
-    | "privacyMode";
+    | "sessionShape";
   label: string;
   status: CheckStatus;
   detail: string;
@@ -44,12 +43,6 @@ const defaultChecks: StateMap = {
   sessionShape: {
     id: "sessionShape",
     label: "Session data in localStorage is valid MasterParsedPayload shape",
-    status: "pending",
-    detail: "Pending",
-  },
-  privacyMode: {
-    id: "privacyMode",
-    label: "Privacy mode is set (cloud or local)",
     status: "pending",
     detail: "Pending",
   },
@@ -209,23 +202,6 @@ export default function SmokeTestPanel() {
           ...nextChecks.sessionShape,
           status: "fail",
           detail: "Session validation failed.",
-        };
-      }
-
-      try {
-        const mode = loadMode();
-        const passed = mode === "cloud" || mode === "local";
-
-        nextChecks.privacyMode = {
-          ...nextChecks.privacyMode,
-          status: passed ? "pass" : "fail",
-          detail: passed ? `Privacy mode: ${mode}` : "Privacy mode is not set.",
-        };
-      } catch {
-        nextChecks.privacyMode = {
-          ...nextChecks.privacyMode,
-          status: "fail",
-          detail: "Unable to read privacy mode.",
         };
       }
 

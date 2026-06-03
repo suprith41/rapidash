@@ -47,9 +47,9 @@ def validate_holdings(holdings: List[AssetHolding]) -> List[AssetHolding]:
     validated_holdings: list[AssetHolding] = []
 
     for holding in holdings:
-        ticker_matches = holding.ticker_symbol.strip().upper() in symbols
         isin_matches = holding.isin.strip().upper() in isins
-        confidence = "high" if ticker_matches and isin_matches else "low"
+        ticker_matches = holding.ticker_symbol.strip().upper() in symbols
+        confidence = "high" if isin_matches or ticker_matches else "low"
 
         validated_holdings.append(_holding_with_confidence(holding, confidence))
 

@@ -6,12 +6,24 @@ CLIENT_ID_PATTERN = re.compile(r"\b[A-Z]{2}[0-9]{8}\b")
 IFSC_PATTERN = re.compile(r"[A-Z]{4}0[A-Z0-9]{6}")
 PHONE_PATTERN = re.compile(r"\b[6-9]\d{9}\b")
 EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+# CDSL DP ID: an 8-digit number that appears within ~60 chars of a "DP ID" / "DP-ID" label
+# (DOTALL flag so we also catch multiline proximity)
+_DP_ID_CONTEXTUAL_RE = re.compile(
+    r"(DP[-\s]?ID\s*[:\-]?\s*)\b(\d{8})\b",
+    re.IGNORECASE,
+)
 
 
 def scrub_pii(raw_text: str) -> str:
     remaining_text = "\n".join(raw_text.splitlines()[20:])
 
-    sanitized_text = PAN_PATTERN.sub("[REDACTED_PAN]", remaining_text)
+    # Replace CDSL DP ID first so the 8-digit number is removed before the
+    # generic phone pattern (which only targets 10-digit numbers, but belt-and-
+    # suspenders prevents future regressions).
+    sanitized_text = _DP_ID_CONTEXTUAL_RE.sub(
+        lambda m: m.group(1) + "[REDACTED_DP_ID]", remaining_text
+    )
+    sanitized_text = PAN_PATTERN.sub("[REDACTED_PAN]", sanitized_text)
     sanitized_text = CLIENT_ID_PATTERN.sub("[REDACTED_CLIENT_ID]", sanitized_text)
     sanitized_text = IFSC_PATTERN.sub("[REDACTED_IFSC]", sanitized_text)
     sanitized_text = PHONE_PATTERN.sub("[REDACTED_PHONE]", sanitized_text)

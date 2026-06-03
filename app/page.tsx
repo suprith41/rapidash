@@ -15,16 +15,21 @@ import {
 } from "recharts";
 import {
   ChevronRight,
+  Download,
   Cpu,
   GitBranch,
   Shield,
+  Loader2,
 } from "lucide-react";
 import LandingNavigation from "@/components/LandingNavigation";
 import { ErrorCard } from "@/components/ErrorBoundary";
 import { ChartSkeleton, MemoSkeleton, TableSkeleton } from "@/components/Skeleton";
+import HealthScoreCard from "@/components/HealthScoreCard";
+import RebalancingCard from "@/components/RebalancingCard";
+import SIPOptimizerCard from "@/components/SIPOptimizerCard";
 import UploadZone from "@/components/UploadZone";
-import { PrivacyModeProvider } from "@/components/TopBar";
 import { analyzeSessions } from "@/lib/api";
+import { exportPortfolioReport } from "@/lib/exportReport";
 import type { MasterParsedPayload } from "@/lib/types";
 import { clearSession, loadSession } from "@/lib/storage";
 
@@ -168,13 +173,12 @@ function HeroMockup() {
 }
 
 export default function Home() {
-  const [session, setSession] = useState<MasterParsedPayload | null>(() =>
-    loadSession()
-  );
+  const [session, setSession] = useState<MasterParsedPayload | null>(null);
   const [forecastData, setForecastData] = useState<ChartPoint[] | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [showUploadZone, setShowUploadZone] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const historicalData = useMemo(() => {
     if (!session) {
@@ -280,8 +284,21 @@ export default function Home() {
     document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
   }
 
+  async function handleExportClick() {
+    if (!session || isExporting) {
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      await exportPortfolioReport(session);
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
-    <PrivacyModeProvider>
+    <>
       <LandingNavigation onUploadClick={handleUploadClick} />
 
       <main className="bg-white font-sans text-[#0a2540]">
@@ -298,8 +315,8 @@ export default function Home() {
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-[#425466] sm:text-xl">
               Upload your broker statement once and get instant portfolio insights,
-              dividend forecasts, and audit trails. Raidash parses privately so your
-              financial life stays on your machine.
+              dividend forecasts, and audit trails. Raidash gives you structured
+              extraction with clear provenance for every field.
             </p>
             <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
               <button
@@ -353,8 +370,8 @@ export default function Home() {
                 },
                 {
                   icon: Cpu,
-                  title: "Local-first AI",
-                  desc: "Runs on your machine via Ollama.",
+                  title: "Instant Parsing",
+                  desc: "Structured AI extraction with audit trail on every field.",
                 },
                 {
                   icon: GitBranch,
@@ -398,7 +415,7 @@ export default function Home() {
               </h2>
             </div>
 
-            <div className="mt-14" id="upload-zone">
+            <div className="mt-14" id="portfolio-dashboard">
               {!session ? (
                 <motion.div
                   animate={{ opacity: 1, y: 0 }}
@@ -459,11 +476,33 @@ export default function Home() {
                           <AIMemoCard
                             holdings={session.holdings}
                             ledgerSummary={session.ledger_summary}
+                            investmentMemo={session.investment_memo}
                           />
                         )}
                       </AnimatePresence>
                     </div>
                   </div>
+
+                  {session.health_score ? (
+                    <div>
+                      <HealthScoreCard healthScore={session.health_score} />
+                    </div>
+                  ) : null}
+
+                  {session.rebalancing ? (
+                    <div>
+                      <RebalancingCard rebalancing={session.rebalancing} />
+                    </div>
+                  ) : null}
+
+                  {session.rebalancing ? (
+                    <div>
+                      <SIPOptimizerCard
+                        initialPlan={session.sip_plan}
+                        rebalancing={session.rebalancing}
+                      />
+                    </div>
+                  ) : null}
 
                   <div className={`${softCard} p-5 sm:p-6`}>
                     <AnimatePresence mode="wait" initial={false}>
@@ -571,6 +610,23 @@ export default function Home() {
           </div>
         </footer>
       </main>
-    </PrivacyModeProvider>
+
+      {session ? (
+        <motion.button
+          aria-label="Export portfolio report"
+          className="fixed bottom-6 right-6 z-[80] flex size-14 items-center justify-center rounded-full bg-[#635bff] text-white shadow-[0_14px_34px_rgba(99,91,255,0.32)]"
+          onClick={handleExportClick}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.94 }}
+          type="button"
+        >
+          {isExporting ? (
+            <Loader2 className="size-5 animate-spin" aria-hidden />
+          ) : (
+            <Download className="size-5" aria-hidden />
+          )}
+        </motion.button>
+      ) : null}
+    </>
   );
 }

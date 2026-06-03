@@ -19,15 +19,10 @@ cd raidash-frontend && npm install && npm run dev
 Create a local environment file at the project root:
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:8000
+GROQ_API_KEY=
 ```
 
 Use `.env.example` for repo sharing and leave the values empty so contributors can fill in their own local settings.
-
-## Privacy Modes
-
-- `cloud`: sends PDF ingestion to the backend using the cloud LLM path.
-- `local`: keeps ingestion local and uses the local Ollama path.
 
 ## Data Files
 

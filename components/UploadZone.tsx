@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { ingestPDF } from "@/lib/api";
 import type { MasterParsedPayload } from "@/lib/types";
-import { loadMode, saveSession } from "@/lib/storage";
+import { saveSession } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
 type UploadState = "idle" | "dragging" | "uploading" | "success" | "error";
@@ -38,8 +38,7 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
     setFileName(file.name);
 
     try {
-      const mode = loadMode();
-      const data = await ingestPDF(file, mode);
+      const data = await ingestPDF(file);
       saveSession(data);
       setState("success");
       onSuccess(data);
