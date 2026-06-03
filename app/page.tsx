@@ -9,9 +9,12 @@ import {
   Cpu,
   Shield,
   MessageCircleMore,
+  X,
 } from "lucide-react";
 import LandingNavigation from "@/components/LandingNavigation";
 import HeroMockup from "@/components/HeroMockup";
+import UploadZone from "@/components/UploadZone";
+import { useSession } from "@/contexts/SessionContext";
 
 const smoothEase = [0.22, 1, 0.36, 1] as const;
 
@@ -202,6 +205,9 @@ function ScrollHighlightAbout() {
 
 export default function Home() {
   const router = useRouter();
+  const { session, setSession } = useSession();
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
 
   function scrollToSection(sectionId: string) {
     if (sectionId === "top") {
@@ -213,7 +219,11 @@ export default function Home() {
   }
 
   function handleUploadClick() {
-    router.push("/dashboard");
+    if (session) {
+      router.push("/dashboard");
+    } else {
+      setIsUploadModalOpen(true);
+    }
   }
 
   function handleHowItWorksClick() {
@@ -336,6 +346,55 @@ export default function Home() {
           </div>
         </footer>
       </main>
+
+      <AnimatePresence>
+        {isUploadModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsUploadModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            {/* Modal Container */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="relative w-full max-w-lg mx-4 bg-white rounded-2xl border border-slate-100 shadow-2xl p-6 z-10"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsUploadModalOpen(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
+                type="button"
+              >
+                <X className="size-5" />
+              </button>
+              
+              {/* Header */}
+              <div className="mb-6 pr-6">
+                <h3 className="text-xl font-bold text-slate-800">Upload Broker Statement</h3>
+                <p className="text-sm text-slate-400 mt-1">
+                  Upload your NSE/BSE statement PDF. It runs structured AI extractions locally on your device.
+                </p>
+              </div>
+
+              {/* Upload Zone */}
+              <UploadZone
+                onSuccess={(data) => {
+                  setSession(data);
+                  setIsUploadModalOpen(false);
+                  router.push("/dashboard");
+                }}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

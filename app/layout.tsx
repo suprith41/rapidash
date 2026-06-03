@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SmokeTestPanel from "@/components/SmokeTestPanel";
+import { SessionProvider } from "@/contexts/SessionContext";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -30,8 +31,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
       >
-        <ErrorBoundary>{children}</ErrorBoundary>
-        <SmokeTestPanel />
+        <SessionProvider>
+          <ErrorBoundary>{children}</ErrorBoundary>
+          <SmokeTestPanel />
+        </SessionProvider>
       </body>
     </html>
   );
