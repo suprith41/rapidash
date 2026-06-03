@@ -1,5 +1,7 @@
 import type {
   AnalyzeResponse,
+  DashChatMessage,
+  DashChatResponse,
   MasterParsedPayload,
   TransactionLedgerEntry,
 } from "@/lib/types";
@@ -90,4 +92,19 @@ export async function analyzeSessions(
   });
 
   return parseJsonResponse<AnalyzeResponse>(response);
+}
+
+export async function chatWithDash(
+  session: MasterParsedPayload,
+  messages: DashChatMessage[]
+): Promise<DashChatResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/analyze/dash-chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ session, messages }),
+  });
+
+  return parseJsonResponse<DashChatResponse>(response);
 }

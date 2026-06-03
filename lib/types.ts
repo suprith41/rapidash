@@ -98,3 +98,12 @@ export interface AnalyzeResponse {
   merged_sessions: MasterParsedPayload[];
   dividend_forecast: DividendForecastPoint[];
 }
+
+export interface DashChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface DashChatResponse {
+  assistant_message: string;
+}

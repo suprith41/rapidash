@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Literal
 
 from fastapi import APIRouter, Body
 from pydantic import BaseModel, Field
 
+from core.analyzer import generate_dash_reply
 from core.state_engine import merge_sessions, project_dividends
 from models.schema import MasterParsedPayload, TransactionLedgerEntry
 
@@ -30,6 +31,20 @@ class AnalyzeResponse(BaseModel):
     dividend_forecast: List[DividendForecastPoint]
 
 
+class DashChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class DashChatRequest(BaseModel):
+    session: MasterParsedPayload
+    messages: List[DashChatMessage] = Field(default_factory=list)
+
+
+class DashChatResponse(BaseModel):
+    assistant_message: str
+
+
 @router.post("/", response_model=AnalyzeResponse)
 def analyze_portfolio(
     payload: AnalyzeRequest = Body(...),
@@ -44,3 +59,13 @@ def analyze_portfolio(
         merged_sessions=merged_sessions,
         dividend_forecast=dividend_forecast,
     )
+
+
+@router.post("/dash-chat", response_model=DashChatResponse)
+def chat_with_dash(payload: DashChatRequest = Body(...)) -> DashChatResponse:
+    assistant_message = generate_dash_reply(
+        payload.session.holdings,
+        payload.session.ledger_summary,
+        [message.model_dump() for message in payload.messages],
+    )
+    return DashChatResponse(assistant_message=assistant_message)

@@ -28,7 +28,7 @@ export async function exportPortfolioReport(
   doc.text("Raidash", 14, 13);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("Financial clarity. Privately.", 40, 13);
+  doc.text("Financial clarity for investors.", 40, 13);
   doc.text(
     `Generated: ${new Date().toLocaleDateString("en-IN")}`,
     pageWidth - 14,

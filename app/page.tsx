@@ -17,9 +17,9 @@ import {
   ChevronRight,
   Download,
   Cpu,
-  GitBranch,
   Shield,
   Loader2,
+  MessageCircleMore,
 } from "lucide-react";
 import LandingNavigation from "@/components/LandingNavigation";
 import { ErrorCard } from "@/components/ErrorBoundary";
@@ -177,7 +177,6 @@ export default function Home() {
   const [forecastData, setForecastData] = useState<ChartPoint[] | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [showUploadZone, setShowUploadZone] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const historicalData = useMemo(() => {
@@ -263,25 +262,29 @@ export default function Home() {
     };
   }, [session]);
 
+  function scrollToSection(sectionId: string) {
+    if (sectionId === "top") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function handleClearSession() {
     clearSession();
     setSession(null);
     setForecastData(null);
     setIsAnalyzing(false);
     setAnalysisError(null);
-    setShowUploadZone(false);
   }
 
   function handleUploadClick() {
-    if (session) {
-      setShowUploadZone(!showUploadZone);
-    } else {
-      document.getElementById("upload-zone")?.scrollIntoView({ behavior: "smooth" });
-    }
+    scrollToSection("upload-section");
   }
 
   function handleHowItWorksClick() {
-    document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+    scrollToSection("workflow");
   }
 
   async function handleExportClick() {
@@ -299,10 +302,10 @@ export default function Home() {
 
   return (
     <>
-      <LandingNavigation onUploadClick={handleUploadClick} />
+      <LandingNavigation onUploadClick={handleUploadClick} onSectionClick={scrollToSection} />
 
       <main className="bg-white font-sans text-[#0a2540]">
-        <section className="overflow-hidden bg-white px-6 pb-24 pt-32 sm:pt-40">
+        <section className="overflow-hidden bg-white px-6 pb-20 pt-32 sm:pt-40">
           <motion.div
             animate="visible"
             className="mx-auto max-w-[1280px] text-center"
@@ -331,7 +334,7 @@ export default function Home() {
                 onClick={handleHowItWorksClick}
                 type="button"
               >
-                See how it works <ChevronRight className="ml-1 inline size-4" />
+                See workflow <ChevronRight className="ml-1 inline size-4" />
               </button>
             </div>
             <div className="mt-16">
@@ -340,7 +343,7 @@ export default function Home() {
           </motion.div>
         </section>
 
-        <section className="bg-[#f6f9fc] px-6 py-24">
+        <section className="bg-[#f6f9fc] px-6 py-24" id="about">
           <motion.div
             className="mx-auto max-w-[1280px]"
             initial="hidden"
@@ -349,10 +352,15 @@ export default function Home() {
             whileInView="visible"
           >
             <div className="max-w-3xl">
-              <SectionLabel>Built different</SectionLabel>
+              <SectionLabel>About</SectionLabel>
               <h2 className="mt-5 text-4xl font-bold tracking-[-0.03em] text-[#0a2540] sm:text-5xl">
-                Institutional-grade tools for retail investors
+                A cleaner way to read a statement and act on it
               </h2>
+              <p className="mt-4 max-w-2xl text-lg leading-8 text-[#425466]">
+                Raidash turns a static broker PDF into a guided workflow: notes first,
+                then Dash when you want a deeper read, then a dashboard that turns the
+                numbers into action.
+              </p>
             </div>
 
             <motion.div
@@ -365,18 +373,18 @@ export default function Home() {
               {[
                 {
                   icon: Shield,
-                  title: "Zero-trust privacy",
-                  desc: "PII scrubbed before any LLM sees it.",
+                  title: "Private by design",
+                  desc: "Your statement is parsed locally first, with the minimum necessary AI touchpoints.",
                 },
                 {
                   icon: Cpu,
-                  title: "Instant Parsing",
-                  desc: "Structured AI extraction with audit trail on every field.",
+                  title: "Dash notes",
+                  desc: "Advisor-style memo paragraphs summarize risk, cash, and the next sensible move.",
                 },
                 {
-                  icon: GitBranch,
-                  title: "Audit everything",
-                  desc: "Every data point traced to source PDF page.",
+                  icon: MessageCircleMore,
+                  title: "Ask deeper questions",
+                  desc: "Open Dash chat whenever you want a more specific explanation or action plan.",
                 },
               ].map((feature) => {
                 const Icon = feature.icon;
@@ -400,7 +408,47 @@ export default function Home() {
           </motion.div>
         </section>
 
-        <section className="bg-white px-6 py-24">
+        <section className="bg-white px-6 py-24" id="upload-section">
+          <motion.div
+            className="mx-auto max-w-[1280px]"
+            initial="hidden"
+            variants={sectionVariants}
+            viewport={{ once: true, amount: 0.2 }}
+            whileInView="visible"
+          >
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+              <div>
+                <SectionLabel>Upload</SectionLabel>
+                <h2 className="mt-5 text-4xl font-bold tracking-[-0.03em] text-[#0a2540] sm:text-5xl">
+                  Upload a statement and get the workflow started
+                </h2>
+                <p className="mt-4 max-w-2xl text-lg leading-8 text-[#425466]">
+                  Use this section as the first stop. Once the upload is done, the
+                  dashboard unlocks the notes, chat, health checks, and allocation map.
+                </p>
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                  {[
+                    "PDFs parse into holdings, values, and timestamps.",
+                    "Dash summarizes the position before you dig deeper.",
+                    "Rebalancing and SIP guidance appear right after.",
+                    "The dashboard remains easy to scan on mobile and desktop.",
+                  ].map((item) => (
+                    <div
+                      className="rounded-xl border border-slate-200 bg-[#f6f9fc] p-4 text-sm leading-6 text-[#425466]"
+                      key={item}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <UploadZone onSuccess={setSession} />
+            </div>
+          </motion.div>
+        </section>
+
+        <section className="bg-[#f6f9fc] px-6 py-24" id="portfolio-dashboard">
           <motion.div
             className="mx-auto max-w-[1280px]"
             initial="hidden"
@@ -409,13 +457,18 @@ export default function Home() {
             whileInView="visible"
           >
             <div className="mx-auto max-w-3xl text-center">
-              <SectionLabel>Your dashboard</SectionLabel>
+              <SectionLabel>Dashboard</SectionLabel>
               <h2 className="mt-5 text-4xl font-bold tracking-[-0.03em] text-[#0a2540] sm:text-5xl">
                 Everything in one view
               </h2>
+              <p className="mt-4 text-lg leading-8 text-[#425466]">
+                The dashboard keeps the big picture in view while Dash handles the
+                conversation. Read the notes, ask deeper questions, and scan the
+                allocation map without losing context.
+              </p>
             </div>
 
-            <div className="mt-14" id="portfolio-dashboard">
+            <div className="mt-14">
               {!session ? (
                 <motion.div
                   animate={{ opacity: 1, y: 0 }}
@@ -423,7 +476,15 @@ export default function Home() {
                   initial={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <UploadZone onSuccess={setSession} />
+                  <div className="rounded-xl border border-dashed border-[#635bff]/30 bg-[#f6f9fc] p-6 text-center">
+                    <p className="text-sm font-semibold text-[#0a2540]">
+                      Upload a statement above to unlock the full dashboard.
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-[#425466]">
+                      The chart, Dash notes, health score, and allocation tools will appear
+                      here once a file is processed.
+                    </p>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div
@@ -432,14 +493,8 @@ export default function Home() {
                   initial={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.6 }}
                 >
-                  {showUploadZone ? (
-                    <div className={`${softCard} p-4 sm:p-6`}>
-                      <UploadZone onSuccess={setSession} />
-                    </div>
-                  ) : null}
-
                   <div className="grid gap-6 lg:grid-cols-2">
-                    <div className={`${softCard} p-5 sm:p-6`}>
+                    <div>
                       <AnimatePresence mode="wait" initial={false}>
                         {isAnalyzing ? (
                           <motion.div
@@ -461,7 +516,7 @@ export default function Home() {
                       </AnimatePresence>
                     </div>
 
-                    <div className={`${softCard} p-5 sm:p-6`}>
+                    <div>
                       <AnimatePresence mode="wait" initial={false}>
                         {isAnalyzing ? (
                           <motion.div
@@ -473,11 +528,7 @@ export default function Home() {
                             <MemoSkeleton />
                           </motion.div>
                         ) : (
-                          <AIMemoCard
-                            holdings={session.holdings}
-                            ledgerSummary={session.ledger_summary}
-                            investmentMemo={session.investment_memo}
-                          />
+                          <AIMemoCard session={session} />
                         )}
                       </AnimatePresence>
                     </div>
@@ -536,7 +587,7 @@ export default function Home() {
           </motion.div>
         </section>
 
-        <section className="bg-[#f6f9fc] px-6 py-24" id="how-it-works">
+        <section className="bg-white px-6 py-24" id="workflow">
           <motion.div
             className="mx-auto max-w-[1280px]"
             initial="hidden"
@@ -545,9 +596,9 @@ export default function Home() {
             whileInView="visible"
           >
             <div className="mx-auto max-w-3xl text-center">
-              <SectionLabel>How it works</SectionLabel>
+              <SectionLabel>Workflow</SectionLabel>
               <h2 className="mt-5 text-4xl font-bold tracking-[-0.03em] text-[#0a2540] sm:text-5xl">
-                Three simple steps
+                From upload to action in three steps
               </h2>
             </div>
 
@@ -561,18 +612,18 @@ export default function Home() {
               {[
                 {
                   num: "1",
-                  title: "Drop your broker statement",
-                  desc: "Zerodha, Groww, Upstox supported.",
+                  title: "Upload the statement",
+                  desc: "Drop the PDF into the upload section and let the parser do the first pass.",
                 },
                 {
                   num: "2",
-                  title: "AI parses and verifies",
-                  desc: "Deterministic first, LLM fallback, NSE validated.",
+                  title: "Read the notes or open Dash",
+                  desc: "Start with the memo, then ask Dash if you want the reasoning in more detail.",
                 },
                 {
                   num: "3",
-                  title: "Your dashboard updates",
-                  desc: "Timeline, forecasts, alerts, all private.",
+                  title: "Review the allocation map",
+                  desc: "Use health, rebalancing, and SIP guidance to decide what to change next.",
                 },
               ].map((step) => (
                 <motion.article className={`${softCard} p-8`} key={step.num} variants={itemVariants}>

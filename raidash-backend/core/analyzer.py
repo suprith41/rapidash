@@ -488,6 +488,86 @@ def generate_investment_memo(
     return _fallback_investment_memo(context)
 
 
+def generate_dash_reply(
+    holdings: List[AssetHolding],
+    ledger: CashLedgerSummary,
+    history: list[dict[str, str]],
+) -> str:
+    total_value = sum(holding.current_market_value for holding in holdings)
+    total_with_cash = total_value + ledger.closing_cash_balance
+    top_holdings = sorted(
+        holdings,
+        key=lambda holding: holding.current_market_value,
+        reverse=True,
+    )[:5]
+
+    context = {
+        "total_portfolio_value": round(total_with_cash, 2),
+        "cash_balance": round(ledger.closing_cash_balance, 2),
+        "holding_count": len(holdings),
+        "top_holdings": [
+            {
+                "ticker_symbol": holding.ticker_symbol,
+                "isin": holding.isin,
+                "market_value": round(holding.current_market_value, 2),
+                "confidence": holding.confidence,
+            }
+            for holding in top_holdings
+        ],
+    }
+
+    try:
+        from groq import Groq
+
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        system_prompt = (
+            "You are Dash, a calm and practical investment copilot inside the Raidash app. "
+            "Write in a conversational but professional tone like a helpful financial analyst. "
+            "Use plain text only. No bullets unless the user explicitly asks for them. "
+            "Keep replies focused, specific, and grounded in the provided portfolio data. "
+            "If the user asks for deeper analysis, explain the next steps clearly and briefly. "
+            "Never mention private data beyond the portfolio context provided. "
+            "If the user asks an irrelevant question, politely steer back to the portfolio."
+        )
+        chat_messages: list[dict[str, str]] = [
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {
+                "role": "user",
+                "content": (
+                    "Portfolio context:\n"
+                    f"{json.dumps(context, ensure_ascii=False, indent=2)}\n\n"
+                    "Conversation so far:\n"
+                    f"{json.dumps(history[-8:], ensure_ascii=False, indent=2)}\n\n"
+                    "Respond to the user's latest question with a concise but useful answer."
+                ),
+            },
+        ]
+
+        completion = client.chat.completions.create(
+            messages=chat_messages,
+            model="llama-3.3-70b-versatile",
+            temperature=0.5,
+            max_tokens=350,
+        )
+        reply = completion.choices[0].message.content or ""
+        reply = reply.strip()
+        if reply:
+            return reply
+    except Exception as exc:
+        logger.warning("Groq dash reply generation failed: %s", exc)
+
+    lead = top_holdings[0]["ticker_symbol"] if top_holdings else "the portfolio"
+    return (
+        f"I’m Dash, and I’d start with {lead}. Your portfolio is worth "
+        f"₹{total_with_cash:,.2f} across {len(holdings)} holdings, with cash at "
+        f"₹{ledger.closing_cash_balance:,.2f}. If you want to go deeper, we can break this down "
+        f"holding by holding, map concentration risk, or turn the rebalancing plan into specific next actions."
+    )
+
+
 def _fallback_investment_memo(context: dict) -> str:
     total_value = context["total_portfolio_value"]
     cash_balance = context["cash_balance"]

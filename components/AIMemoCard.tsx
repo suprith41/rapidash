@@ -6,10 +6,18 @@ import {
   AlertTriangle,
   ChevronDown,
   CircleDollarSign,
+  Send,
   ShieldAlert,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import type { AssetHolding, CashLedgerSummary } from "@/lib/types";
+import type {
+  AssetHolding,
+  CashLedgerSummary,
+  DashChatMessage,
+  MasterParsedPayload,
+} from "@/lib/types";
+import { chatWithDash } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export type InvestmentAlert = {
@@ -20,9 +28,7 @@ export type InvestmentAlert = {
 };
 
 type AIMemoCardProps = {
-  holdings: AssetHolding[];
-  ledgerSummary: CashLedgerSummary;
-  investmentMemo?: string | null;
+  session: MasterParsedPayload;
 };
 
 const severityStyles: Record<
@@ -224,16 +230,24 @@ function HealthyState() {
   );
 }
 
-function AIMemoCard({
-  holdings,
-  ledgerSummary,
-  investmentMemo,
-}: AIMemoCardProps) {
+function AIMemoCard({ session }: AIMemoCardProps) {
+  const { holdings, ledger_summary: ledgerSummary, investment_memo: investmentMemo } = session;
   const memoAlerts = useMemo(
     () => buildDynamicAlerts(holdings, ledgerSummary),
     [holdings, ledgerSummary]
   );
   const hasAlerts = memoAlerts.length > 0;
+  const [mode, setMode] = useState<"notes" | "chat">("notes");
+  const [chatMessages, setChatMessages] = useState<DashChatMessage[]>([
+    {
+      role: "assistant",
+      content:
+        investmentMemo ||
+        "I’m Dash. I can walk you through concentration, rebalancing, and what to do next.",
+    },
+  ]);
+  const [draft, setDraft] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const memoParagraphs = useMemo(
     () =>
       investmentMemo
@@ -246,21 +260,60 @@ function AIMemoCard({
   );
   const hasMemo = memoParagraphs.length > 0;
 
+  async function sendDashMessage(prompt?: string) {
+    const content = (prompt ?? draft).trim();
+    if (!content || isSending) {
+      return;
+    }
+
+    const nextMessages: DashChatMessage[] = [...chatMessages, { role: "user", content }];
+    setChatMessages(nextMessages);
+    setDraft("");
+    setIsSending(true);
+    setMode("chat");
+
+    try {
+      const response = await chatWithDash(session, nextMessages);
+      setChatMessages((current) => [
+        ...current,
+        { role: "assistant", content: response.assistant_message },
+      ]);
+    } catch {
+      setChatMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content:
+            "I couldn’t reach Dash just now. Try again in a moment, and I’ll pick up the portfolio review from here.",
+        },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
+  }
+
   return (
-    <section className="flex h-full min-h-[18rem] flex-col">
+    <section
+      className="flex h-full min-h-[18rem] flex-col rounded-2xl bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] ring-1 ring-slate-900/[0.04] sm:p-6"
+      id="dash"
+    >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#635bff]">
-            AI Investment Memo
-          </p>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#635bff]">
+            <Sparkles className="size-4" aria-hidden />
+            Dash
+          </div>
           <h2 className="mt-2 text-xl font-bold tracking-tight text-[#0a2540]">
-            Advisor Notes
+            Advisor notes and chat
           </h2>
         </div>
-        <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-          <span className="size-2 rounded-full bg-emerald-500 animate-[pulse_2s_ease-in-out_infinite]" />
-          Live
-        </div>
+        <button
+          className="rounded-full border border-[#d7ddff] bg-[#f7f8ff] px-3 py-1.5 text-xs font-bold text-[#635bff] transition hover:border-[#635bff]/35 hover:bg-[#eef0ff]"
+          onClick={() => setMode((current) => (current === "notes" ? "chat" : "notes"))}
+          type="button"
+        >
+          {mode === "notes" ? "Dive in deeper" : "Back to notes"}
+        </button>
       </div>
 
       <div className="mt-6 flex flex-1 flex-col gap-4">
@@ -272,15 +325,119 @@ function AIMemoCard({
             transition={{ duration: 0.25 }}
           >
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#635bff]">
-              Portfolio Memo
+              AI Notes
             </p>
             <div className="mt-3 space-y-3 text-sm leading-7 text-[#425466]">
               {memoParagraphs.map((paragraph, index) => (
                 <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
               ))}
             </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                className="rounded-full bg-[#635bff] px-3 py-1.5 text-xs font-bold text-white shadow-[0_8px_18px_rgba(99,91,255,0.18)] transition hover:-translate-y-0.5"
+                onClick={() => setMode("chat")}
+                type="button"
+              >
+                Chat with Dash
+              </button>
+              <button
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[#0a2540] transition hover:border-[#635bff]/35 hover:text-[#635bff]"
+                onClick={() => sendDashMessage("Can you dive deeper into the portfolio and explain the biggest risks and next actions?")}
+                type="button"
+              >
+                Dive in deeper
+              </button>
+            </div>
           </motion.div>
         ) : null}
+
+        <AnimatePresence mode="wait" initial={false}>
+          {mode === "chat" ? (
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              className="overflow-hidden rounded-xl border border-[#dfe6ff] bg-white shadow-[0_10px_28px_rgba(10,37,64,0.05)]"
+              exit={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 8 }}
+              key="dash-chat"
+              transition={{ duration: 0.22 }}
+            >
+              <div className="border-b border-slate-100 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#635bff]">
+                  Chat with Dash
+                </p>
+                <p className="mt-1 text-sm text-[#425466]">
+                  Ask for a deeper read on concentration, cash, rebalancing, or SIPs.
+                </p>
+              </div>
+
+              <div className="max-h-[18rem] space-y-3 overflow-y-auto px-4 py-4">
+                {chatMessages.map((message, index) => (
+                  <div
+                    className={cn(
+                      "flex",
+                      message.role === "assistant" ? "justify-start" : "justify-end"
+                    )}
+                    key={`${message.role}-${index}-${message.content.slice(0, 16)}`}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-6",
+                        message.role === "assistant"
+                          ? "bg-[#f7f8ff] text-[#0a2540]"
+                          : "bg-[#635bff] text-white"
+                      )}
+                    >
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-slate-100 p-4">
+                <div className="flex flex-wrap gap-2 pb-3">
+                  {[
+                    "Dive deeper on concentration",
+                    "Should I rebalance now?",
+                    "What should I do with SIPs?",
+                  ].map((prompt) => (
+                    <button
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[#425466] transition hover:border-[#635bff]/35 hover:text-[#635bff]"
+                      key={prompt}
+                      onClick={() => void sendDashMessage(prompt)}
+                      type="button"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-[#0a2540] outline-none transition placeholder:text-[#94a3b8] focus:border-[#635bff]"
+                    placeholder="Ask Dash anything about this portfolio..."
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        void sendDashMessage();
+                      }
+                    }}
+                  />
+                  <button
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#635bff] px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isSending}
+                    onClick={() => void sendDashMessage()}
+                    type="button"
+                  >
+                    <Send className="size-4" aria-hidden />
+                    {isSending ? "Thinking..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
         {hasAlerts ? (
           <div className="flex flex-col gap-3">

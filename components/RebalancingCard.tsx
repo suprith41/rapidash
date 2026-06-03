@@ -28,6 +28,37 @@ const actionStyles: Record<
   },
 };
 
+const categoryStyles: Record<
+  string,
+  { tint: string; accent: string; bar: string }
+> = {
+  "Large Cap Equity": {
+    tint: "bg-indigo-50 text-indigo-700 ring-indigo-100",
+    accent: "from-indigo-500 to-blue-500",
+    bar: "bg-indigo-500/70",
+  },
+  "Mid Cap Equity": {
+    tint: "bg-sky-50 text-sky-700 ring-sky-100",
+    accent: "from-sky-500 to-cyan-500",
+    bar: "bg-sky-500/70",
+  },
+  "Small Cap Equity": {
+    tint: "bg-amber-50 text-amber-700 ring-amber-100",
+    accent: "from-amber-500 to-orange-500",
+    bar: "bg-amber-500/70",
+  },
+  "Mutual Funds": {
+    tint: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    accent: "from-emerald-500 to-teal-500",
+    bar: "bg-emerald-500/70",
+  },
+  "Cash Reserve": {
+    tint: "bg-slate-100 text-slate-700 ring-slate-200",
+    accent: "from-slate-500 to-slate-400",
+    bar: "bg-slate-400/80",
+  },
+};
+
 export default function RebalancingCard({ rebalancing }: RebalancingCardProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
   const total = Math.max(rebalancing.total_portfolio_value, 1);
@@ -52,13 +83,14 @@ export default function RebalancingCard({ rebalancing }: RebalancingCardProps) {
       <div className="mt-5 grid gap-3">
         {rebalancing.suggestions.map((item, index) => {
           const action = actionStyles[item.action];
+          const palette = categoryStyles[item.category] ?? categoryStyles["Cash Reserve"];
           const currentPct = (item.current_value / total) * 100;
           const idealPct = (item.ideal_value / total) * 100;
           const isExpanded = expandedIndex === index;
 
           return (
             <motion.button
-              className="w-full rounded-lg border border-slate-200 bg-[#f6f9fc] p-4 text-left transition hover:border-slate-300"
+              className="w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-[0_4px_18px_rgba(15,23,42,0.03)] transition hover:-translate-y-0.5 hover:border-slate-300"
               key={item.category}
               onClick={() => setExpandedIndex(isExpanded ? null : index)}
               type="button"
@@ -68,7 +100,16 @@ export default function RebalancingCard({ rebalancing }: RebalancingCardProps) {
             >
               <div className="grid gap-3 lg:grid-cols-[1.2fr_auto_auto_auto] lg:items-center">
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-[#0a2540]">{item.category}</div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1",
+                        palette.tint
+                      )}
+                    >
+                      {item.category}
+                    </span>
+                  </div>
                   <div className="mt-1 text-xs font-medium text-[#697386]">
                     Click for action details
                   </div>
@@ -95,16 +136,19 @@ export default function RebalancingCard({ rebalancing }: RebalancingCardProps) {
               </div>
 
               <div className="mt-4 space-y-2">
-                <div className="relative h-2 overflow-hidden rounded-full bg-slate-200">
+                <div className="relative h-2 overflow-hidden rounded-full bg-slate-100">
                   <motion.div
                     animate={{ width: `${Math.max(0, Math.min(100, currentPct))}%` }}
-                    className="absolute inset-y-0 left-0 rounded-full bg-slate-500/70"
+                    className={cn("absolute inset-y-0 left-0 rounded-full", palette.bar)}
                     initial={{ width: 0 }}
                     transition={{ type: "spring", stiffness: 90, damping: 18 }}
                   />
                   <motion.div
                     animate={{ width: `${Math.max(0, Math.min(100, idealPct))}%` }}
-                    className="absolute inset-y-0 left-0 rounded-full border border-dashed border-[#635bff] bg-transparent"
+                    className={cn(
+                      "absolute inset-y-0 left-0 rounded-full border border-dashed bg-transparent",
+                      `border-[#635bff]`
+                    )}
                     initial={{ width: 0 }}
                     transition={{ type: "spring", stiffness: 90, damping: 18, delay: 0.05 }}
                   />

@@ -89,7 +89,7 @@ function ChartTooltip({
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-[0_12px_32px_rgba(0,0,0,0.08)]">
-      <div className="text-xs text-muted">{label}</div>
+      <div className="text-xs font-medium text-[#64748b]">{label}</div>
       <div className="mt-1 text-sm font-semibold text-[#0a2540]">
         {inrFormatter.format(Number(payload[0].value ?? 0))}
       </div>
@@ -175,12 +175,12 @@ function NetWorthAreaChart({
         <XAxis
           axisLine={false}
           dataKey="date"
-          tick={{ fill: "var(--text-muted)", fontSize: 12 }}
+          tick={{ fill: "#475569", fontSize: 12, fontWeight: 500 }}
           tickLine={false}
         />
         <YAxis
           axisLine={false}
-          tick={{ fill: "var(--text-muted)", fontSize: 12 }}
+          tick={{ fill: "#475569", fontSize: 12, fontWeight: 500 }}
           tickFormatter={(value) => compactInrFormatter.format(Number(value))}
           tickLine={false}
           width={82}
@@ -218,10 +218,11 @@ function NetWorthChart({
 
     return forecastData.length > 0 ? forecastData : forecastMockData;
   }, [forecastData, historicalData, view]);
+  const latestValue = chartData.at(-1)?.value ?? 0;
 
   return (
-    <div className="flex h-full min-h-[18rem] flex-col">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex h-full min-h-[20rem] flex-col rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-[#f8faff] p-4 sm:p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#635bff]">
             Portfolio
@@ -229,11 +230,24 @@ function NetWorthChart({
           <h2 className="mt-2 text-xl font-bold tracking-tight text-[#0a2540]">
             {viewOptions.find((option) => option.value === view)?.label}
           </h2>
+          <p className="mt-1 max-w-xl text-sm leading-6 text-[#425466]">
+            Hover the line to inspect the exact value. Switch between history and forecast to
+            compare the story visually.
+          </p>
         </div>
         <ViewSwitcher activeView={view} onChange={setView} />
       </div>
 
-      <div className="relative mt-6 min-h-[16rem] flex-1 overflow-hidden">
+      <div className="mt-5 flex flex-wrap gap-2">
+        <span className="rounded-full bg-[#f6f9fc] px-3 py-1.5 text-xs font-semibold text-[#425466]">
+          Latest value: {inrFormatter.format(latestValue)}
+        </span>
+        <span className="rounded-full bg-[#eef2ff] px-3 py-1.5 text-xs font-semibold text-[#4f46e5]">
+          Interactive chart
+        </span>
+      </div>
+
+      <div className="relative mt-5 min-h-[16rem] flex-1 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
