@@ -103,7 +103,7 @@ function ScrollHighlightAbout() {
   return (
     <section
       ref={containerRef}
-      className="relative bg-[#e0e7ff]/30 backdrop-blur-sm px-6"
+      className="relative bg-[#f5f3ff]/40 backdrop-blur-sm px-6"
       style={{ minHeight: "220vh" }}
       id="about"
     >
@@ -234,7 +234,7 @@ export default function Home() {
     <>
       <LandingNavigation onUploadClick={handleUploadClick} onSectionClick={scrollToSection} />
 
-      <main className="bg-gradient-to-br from-[#f5f3ff] via-[#eef2ff] to-[#e0e7ff] font-sans text-[#0a2540]">
+      <main className="bg-gradient-to-br from-[#fafaff] via-[#f5f3ff] to-[#eef2ff] font-sans text-[#0a2540]">
         <section className="overflow-hidden bg-transparent px-6 pb-20 pt-36 sm:pt-44">
           <motion.div
             animate="visible"
