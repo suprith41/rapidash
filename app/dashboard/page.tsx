@@ -181,7 +181,7 @@ export default function Dashboard() {
             <span>Back to Home</span>
           </Link>
           <div className="text-lg font-bold tracking-tight text-[#0a2540] md:text-xl">
-            Rapidash Portfolio Dashboard
+            Raidash Portfolio Dashboard
           </div>
           <div className="flex items-center gap-2">
             {session && (

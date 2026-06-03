@@ -16,7 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Rapidash",
+  title: "Raidash",
   description: "Privacy-first wealth tracking for Indian investors",
 };
 

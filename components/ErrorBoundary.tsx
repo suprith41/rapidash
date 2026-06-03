@@ -58,7 +58,7 @@ export default class ErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Rapidash dashboard crashed", error, errorInfo);
+    console.error("Raidash dashboard crashed", error, errorInfo);
   }
 
   handleReset = () => {

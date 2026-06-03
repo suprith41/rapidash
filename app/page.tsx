@@ -5,22 +5,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   ChevronRight,
   Cpu,
   Shield,
   MessageCircleMore,
 } from "lucide-react";
 import LandingNavigation from "@/components/LandingNavigation";
-import { cn } from "@/lib/utils";
+import HeroMockup from "@/components/HeroMockup";
 
 const smoothEase = [0.22, 1, 0.36, 1] as const;
 
@@ -50,10 +41,7 @@ const itemVariants: Variants = {
   },
 };
 
-type ChartPoint = {
-  date: string;
-  value: number;
-};
+
 
 const softCard =
   "rounded-xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] ring-1 ring-slate-900/[0.04]";
@@ -66,120 +54,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function HeroMockup() {
-  const [activeTab, setActiveTab] = useState<"timeline" | "forecast">("timeline");
 
-  const timelineData: ChartPoint[] = [
-    { date: "Jan", value: 850000 },
-    { date: "Feb", value: 920000 },
-    { date: "Mar", value: 1050000 },
-    { date: "Apr", value: 1180000 },
-    { date: "May", value: 1320000 },
-    { date: "Jun", value: 1510000 },
-  ];
-
-  const forecastData: ChartPoint[] = [
-    { date: "Jun", value: 1510000 },
-    { date: "Jul", value: 1680000 },
-    { date: "Aug", value: 1820000 },
-    { date: "Sep", value: 1990000 },
-    { date: "Oct", value: 2150000 },
-    { date: "Nov", value: 2380000 },
-  ];
-
-  const currentData = activeTab === "timeline" ? timelineData : forecastData;
-  const displayValue = activeTab === "timeline" ? "₹15.1L" : "₹23.8L";
-
-  return (
-    <motion.div
-      animate={{ y: [0, -8, 0] }}
-      className={`${softCard} mx-auto w-full max-w-4xl p-4 sm:p-6`}
-      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-    >
-      <div className="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#635bff]">
-            {activeTab === "timeline" ? "Net Worth" : "Net Worth Forecast"}
-          </p>
-          <div className="mt-2 text-3xl font-bold tracking-tight text-[#0a2540]">
-            {displayValue}
-          </div>
-        </div>
-        <div className="inline-flex w-fit rounded-full bg-[#f6f9fc] p-1 text-xs font-semibold text-[#425466]">
-          <button
-            className={cn(
-              "rounded-full px-3 py-1.5 transition-all duration-200",
-              activeTab === "timeline"
-                ? "bg-white text-[#635bff] shadow-sm"
-                : "text-[#425466] hover:text-[#0a2540]"
-            )}
-            onClick={() => setActiveTab("timeline")}
-            type="button"
-          >
-            Timeline
-          </button>
-          <button
-            className={cn(
-              "rounded-full px-3 py-1.5 transition-all duration-200",
-              activeTab === "forecast"
-                ? "bg-white text-[#635bff] shadow-sm"
-                : "text-[#425466] hover:text-[#0a2540]"
-            )}
-            onClick={() => setActiveTab("forecast")}
-            type="button"
-          >
-            Forecast
-          </button>
-        </div>
-      </div>
-      <div className="h-64 w-full">
-        <ResponsiveContainer height="100%" minWidth={0} width="100%">
-          <AreaChart data={currentData} margin={{ bottom: 0, left: 0, right: 8, top: 8 }}>
-            <defs>
-              <linearGradient id="heroMockupGradient" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#635bff" stopOpacity={0.24} />
-                <stop offset="100%" stopColor="#635bff" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="#e6ebf1" strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              axisLine={false}
-              dataKey="date"
-              tick={{ fill: "#697386", fontSize: 12 }}
-              tickLine={false}
-            />
-            <YAxis
-              axisLine={false}
-              tick={{ fill: "#697386", fontSize: 12 }}
-              tickFormatter={(value) => `₹${Number(value) / 100000}L`}
-              tickLine={false}
-              width={56}
-            />
-            <Tooltip
-              contentStyle={{
-                background: "#ffffff",
-                border: "1px solid #e6ebf1",
-                borderRadius: 12,
-                boxShadow: "0 12px 32px rgba(0,0,0,0.08)",
-                color: "#0a2540",
-              }}
-              formatter={(value) => [`₹${Number(value).toLocaleString("en-IN")}`, "Value"]}
-            />
-            <Area
-              dataKey="value"
-              fill="url(#heroMockupGradient)"
-              stroke="#635bff"
-              strokeDasharray={activeTab === "forecast" ? "4 4" : undefined}
-              strokeLinecap="round"
-              strokeWidth={3}
-              type="monotone"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </motion.div>
-  );
-}
 
 function ScrollHighlightAbout() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -208,7 +83,7 @@ function ScrollHighlightAbout() {
   }, []);
 
   const aboutText =
-    "Rapidash turns static broker statements into interactive, secure portfolios. It runs structured AI extractions locally on your device, providing clear provenance and audit trails. By parsing NSE and BSE broker PDFs directly, Rapidash gives you instant advisor-style memos, smart rebalancing maps, and monthly SIP optimizers. Zero servers store your data, ensuring complete financial privacy.";
+    "Raidash turns static broker statements into interactive, secure portfolios. It runs structured AI extractions locally on your device, providing clear provenance and audit trails. By parsing NSE and BSE broker PDFs directly, Raidash gives you instant advisor-style memos, smart rebalancing maps, and monthly SIP optimizers. Zero servers store your data, ensuring complete financial privacy.";
 
   const words = aboutText.split(" ");
   const totalWords = words.length;
@@ -232,7 +107,7 @@ function ScrollHighlightAbout() {
       <div className="sticky top-0 flex h-screen flex-col justify-center max-w-[1280px] mx-auto py-12">
         <div className="max-w-4xl">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#635bff] mb-4">
-            About Rapidash
+            About Raidash
           </p>
 
           <div className="min-h-[16rem] md:min-h-[14rem]">
@@ -363,7 +238,7 @@ export default function Home() {
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[#425466] sm:text-lg">
               Drop your Indian broker statement (NSE/BSE) to get instant local portfolio insights,
-              dividend forecasts, and audit trails. Rapidash runs fully private, local extraction
+              dividend forecasts, and audit trails. Raidash runs fully private, local extraction
               with clear provenance and complete data ownership.
             </p>
             <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
@@ -448,7 +323,7 @@ export default function Home() {
             <div className="flex flex-col gap-8 border-b border-slate-100 pb-8 md:flex-row md:items-start md:justify-between">
               <div>
                 <div className="text-xl font-bold tracking-[-0.03em] text-[#0a2540]">
-                  Rapidash
+                  Raidash
                 </div>
                 <p className="mt-2 text-sm text-[#425466]">
                   Built for privacy-conscious Indian investors
@@ -456,7 +331,7 @@ export default function Home() {
               </div>
             </div>
             <p className="pt-8 text-sm text-[#697386]">
-              © {new Date().getFullYear()} Rapidash. All rights reserved.
+              © {new Date().getFullYear()} Raidash. All rights reserved.
             </p>
           </div>
         </footer>

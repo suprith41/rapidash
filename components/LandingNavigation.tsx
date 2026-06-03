@@ -38,7 +38,7 @@ export default function LandingNavigation({
             onClick={() => onSectionClick("top")}
             type="button"
           >
-            Rapidash
+            Raidash
           </button>
         </div>
 
