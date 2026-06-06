@@ -5,8 +5,8 @@
 1. Start the backend:
 
 ```bash
-cd rapidash-backend && pip install -r requirements.txt && uvicorn main:app --reload
-```
+
+```cd rapidash-backend && pip install -r requirements.txt && uvicorn main:app --reload
 
 2. Start the frontend:
 
