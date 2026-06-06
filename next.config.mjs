@@ -1,15 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-	async rewrites() {
-		if (process.env.NODE_ENV !== "development") {
-			return [];
-		}
-
+	async headers() {
 		return [
 			{
 				source: "/api/:path*",
-				destination: "http://localhost:8000/api/:path*",
-			},
+				headers: [
+					{ key: "Access-Control-Allow-Origin", value: "*" }
+				]
+			}
 		];
 	},
 };

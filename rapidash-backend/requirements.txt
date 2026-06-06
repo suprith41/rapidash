@@ -6,3 +6,4 @@ python-multipart
 groq
 pandas
 python-dotenv
+gunicorn
