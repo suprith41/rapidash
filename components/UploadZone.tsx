@@ -24,6 +24,8 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
   const [state, setState] = useState<UploadState>("idle");
   const [fileName, setFileName] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [progress, setProgress] = useState<number>(0);
+  const [progressStage, setProgressStage] = useState<string>("");
   const [dragCounter, setDragCounter] = useState(0);
 
   const isUploading = state === "uploading";
@@ -36,13 +38,57 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
     setState("uploading");
     setErrorMessage("");
     setFileName(file.name);
+    setProgress(0);
+    setProgressStage("Reading portfolio statement...");
+
+    let currentProgress = 0;
+    const progressInterval = setInterval(() => {
+      // Random increment between 2 and 10
+      currentProgress += Math.random() * 8 + 2;
+      if (currentProgress >= 95) {
+        currentProgress = 95;
+        clearInterval(progressInterval);
+      }
+      setProgress(Math.floor(currentProgress));
+
+      if (currentProgress < 25) {
+        setProgressStage("Reading portfolio statement...");
+      } else if (currentProgress < 50) {
+        setProgressStage("Extracting transaction ledger...");
+      } else if (currentProgress < 75) {
+        setProgressStage("Analyzing holdings & performance...");
+      } else {
+        setProgressStage("Matching tickers with NSE master data...");
+      }
+    }, 150);
 
     try {
       const data = await ingestPDF(file);
       saveSession(data);
-      setState("success");
-      onSuccess(data);
+
+      clearInterval(progressInterval);
+      setProgressStage("Finalizing dashboard layout...");
+
+      // Rapid transition from current progress to 100%
+      let finalProgress = currentProgress;
+      const finalInterval = setInterval(() => {
+        finalProgress += 10;
+        if (finalProgress >= 100) {
+          finalProgress = 100;
+          setProgress(100);
+          setProgressStage("Analysis complete!");
+          clearInterval(finalInterval);
+
+          setTimeout(() => {
+            setState("success");
+            onSuccess(data);
+          }, 600);
+        } else {
+          setProgress(Math.floor(finalProgress));
+        }
+      }, 80);
     } catch (error) {
+      clearInterval(progressInterval);
       const message = error instanceof Error ? error.message : "Upload failed";
       setErrorMessage(message);
       setState("error");
@@ -165,7 +211,7 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
           <motion.div
             key="uploading"
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center gap-4"
+            className="flex flex-col items-center gap-6 w-full max-w-xs mx-auto"
             exit={{ opacity: 0, y: 8 }}
             initial={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.2 }}
@@ -174,9 +220,23 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
               <span className="absolute inset-0 rounded-full border border-[#635bff]/35 animate-pulse" />
               <Loader2 className="size-7 animate-spin text-[#635bff]" aria-hidden />
             </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Uploading statement</p>
-              <p className="mt-1 text-xs text-muted">Processing {fileName || "your file"}...</p>
+            
+            <div className="w-full space-y-2">
+              <div className="flex justify-between text-xs font-semibold">
+                <span className="text-[#635bff] animate-pulse">{progressStage}</span>
+                <span className="text-muted">{progress}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 border border-slate-200/50">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-[#635bff] to-[#8c85ff] shadow-[0_0_8px_rgba(99,91,255,0.4)]"
+                  initial={{ width: "0%" }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ ease: "easeInOut", duration: 0.15 }}
+                />
+              </div>
+              <p className="text-[11px] text-muted truncate">
+                Processing {fileName || "your file"}
+              </p>
             </div>
           </motion.div>
         ) : state === "success" ? (

@@ -9,6 +9,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  isThinking?: boolean;
 };
 
 // Simple custom Markdown renderer for bold, list items, and paragraphs
@@ -70,31 +71,37 @@ export default function ChatPage() {
     const content = (prompt ?? draft).trim();
     if (!content || isSending) return;
 
-    // Add user message to log
+    // Add user message to log and a placeholder thinking message for the assistant
     const updatedMessages: ChatMessage[] = [
       ...chatMessages,
       { role: "user", content },
     ];
-    setChatMessages(updatedMessages);
+    setChatMessages([
+      ...updatedMessages,
+      { role: "assistant", content: "", isThinking: true },
+    ]);
     setDraft("");
     setIsSending(true);
 
     const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
     if (!apiKey) {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "Groq API key is not configured. Please add NEXT_PUBLIC_GROQ_API_KEY to your environment variables in Vercel dashboard.",
-        },
-      ]);
+      setChatMessages((prev) => {
+        const next = [...prev];
+        const lastIdx = next.length - 1;
+        if (lastIdx >= 0 && next[lastIdx].role === "assistant") {
+          next[lastIdx] = {
+            ...next[lastIdx],
+            content: "Groq API key is not configured. Please add NEXT_PUBLIC_GROQ_API_KEY to your environment variables in Vercel dashboard.",
+            isThinking: false,
+          };
+        }
+        return next;
+      });
       setIsSending(false);
       return;
     }
 
     try {
-
       // Build context & system messages
       const session_json = JSON.stringify(session);
       const systemMessage = {
@@ -115,7 +122,7 @@ Format key numbers in bold using markdown.`,
         })),
       ];
 
-      // Call Groq API from client
+      // Call Groq API from client with streaming
       const response = await fetch(
         "https://api.groq.com/openai/v1/chat/completions",
         {
@@ -128,7 +135,7 @@ Format key numbers in bold using markdown.`,
             model: "llama-3.3-70b-versatile",
             messages: conversationHistory,
             max_tokens: 400,
-            stream: false,
+            stream: true,
           }),
         }
       );
@@ -137,25 +144,69 @@ Format key numbers in bold using markdown.`,
         throw new Error(`API returned status ${response.status}`);
       }
 
-      const data = await response.json();
-      const replyText =
-        data.choices?.[0]?.message?.content ||
-        "I'm sorry, I couldn't formulate a response right now. Please try again.";
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder("utf-8");
+      if (!reader) {
+        throw new Error("No readable stream available");
+      }
 
-      setChatMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: replyText },
-      ]);
+      let done = false;
+      let replyText = "";
+      let buffer = "";
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          buffer += decoder.decode(value, { stream: !done });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            if (trimmed === "data: [DONE]") continue;
+            if (trimmed.startsWith("data: ")) {
+              try {
+                const jsonStr = trimmed.slice(6);
+                const chunk = JSON.parse(jsonStr);
+                const contentChunk = chunk.choices?.[0]?.delta?.content || "";
+                if (contentChunk) {
+                  replyText += contentChunk;
+                  setChatMessages((prev) => {
+                    const next = [...prev];
+                    const lastIdx = next.length - 1;
+                    if (lastIdx >= 0 && next[lastIdx].role === "assistant") {
+                      next[lastIdx] = {
+                        ...next[lastIdx],
+                        content: replyText,
+                        isThinking: false,
+                      };
+                    }
+                    return next;
+                  });
+                }
+              } catch (e) {
+                console.error("Error parsing stream chunk:", e);
+              }
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error("Chat error:", error);
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "I encountered an error connecting to Dash. Please ensure your Groq API key is correctly configured in `.env.local`.",
-        },
-      ]);
+      setChatMessages((prev) => {
+        const next = [...prev];
+        const lastIdx = next.length - 1;
+        if (lastIdx >= 0 && next[lastIdx].role === "assistant") {
+          next[lastIdx] = {
+            ...next[lastIdx],
+            content: "I encountered an error connecting to Dash. Please ensure your Groq API key is correctly configured in `.env.local`.",
+            isThinking: false,
+          };
+        }
+        return next;
+      });
     } finally {
       setIsSending(false);
     }
@@ -272,7 +323,17 @@ Format key numbers in bold using markdown.`,
                         }`}
                       >
                         {isDash ? (
-                          <Markdown text={msg.content} />
+                          msg.isThinking ? (
+                            <div className="flex items-center gap-2 py-1 text-slate-400 font-semibold select-none animate-pulse">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#635bff] opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#635bff]"></span>
+                              </span>
+                              <span>Thinking...</span>
+                            </div>
+                          ) : (
+                            <Markdown text={msg.content} />
+                          )
                         ) : (
                           <p className="whitespace-pre-wrap">{msg.content}</p>
                         )}
@@ -285,7 +346,7 @@ Format key numbers in bold using markdown.`,
           </AnimatePresence>
 
           {/* Typing Indicator */}
-          {isSending && (
+          {isSending && chatMessages.length > 0 && chatMessages[chatMessages.length - 1].role !== "assistant" && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
