@@ -102,24 +102,46 @@ export default function ChatPage() {
     }
 
     try {
-      // Build context & system messages
-      const session_json = JSON.stringify(session);
-      const systemMessage = {
-        role: "system",
-        content: `You are Dash, a friendly AI portfolio advisor for Rapidash.
-You have access to the user's portfolio data: ${session_json}
-Keep responses concise — max 3 short paragraphs.
-Use ₹ for currency. Be specific about their actual holdings.
-Never give generic advice — always reference their real data.
-Format key numbers in bold using markdown.`,
-      };
+      const totalNetWorth = session.holdings.reduce((sum, h) => sum + h.current_market_value, 0) || 0;
+
+      const systemPrompt = `You are Dash, a precise AI portfolio advisor for Rapidash. You have the user's exact portfolio data.
+
+PORTFOLIO DATA:
+Total Value: ₹${totalNetWorth.toLocaleString('en-IN')}
+Statement Date: ${session.metadata.statement_timestamp}
+Broker: ${session.metadata.origin_broker}
+
+HOLDINGS:
+${session.holdings.map(h => 
+  `- ${h.ticker_symbol}: ${h.quantity} units @ ₹${h.current_market_value.toLocaleString('en-IN')} (${((h.current_market_value/totalNetWorth)*100).toFixed(1)}% of portfolio)`
+).join('\n')}
+
+HEALTH SCORE: ${session.health_score?.score ?? "N/A"}/100 
+Grade: ${session.health_score?.grade ?? "N/A"} — ${session.health_score?.grade_label ?? "N/A"}
+
+REBALANCING NEEDED:
+${session.rebalancing?.suggestions
+  ?.filter(s => s.action !== 'hold')
+  ?.map(s => `- ${s.category}: ${s.action_label}`)
+  ?.join('\n') ?? "None"}
+
+STRICT RULES:
+1. Always reference the user's ACTUAL holdings by name
+2. Use exact rupee values from the data above
+3. Keep responses under 4 sentences maximum
+4. Never give generic advice — always specific to this portfolio
+5. Format rupee amounts as ₹X,XX,XXX
+6. If asked about a holding not in the list say "That holding is not in your current statement"
+7. Be conversational but precise
+8. Never say "I don't have access to your data" — you have all the data above`;
 
       const conversationHistory = [
-        systemMessage,
-        ...updatedMessages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
+        { role: 'system', content: systemPrompt },
+        ...chatMessages.map(m => ({
+          role: m.role,
+          content: m.content
         })),
+        { role: 'user', content: content }
       ];
 
       // Call Groq API from client with streaming
@@ -235,10 +257,10 @@ Format key numbers in bold using markdown.`,
   if (!session) return null;
 
   const welcomeSuggestions = [
-    "What's my portfolio health?",
-    "Where should I invest next?",
-    "Explain my rebalancing plan",
-    "Which holdings should I review?",
+    `Why is my health score ${session?.health_score?.score ?? "N/A"}/100?`,
+    `What should I do with my ${session?.holdings[0]?.ticker_symbol || "main"} holding?`,
+    `How much should I invest in SIP monthly?`,
+    `Which holding has the highest risk?`,
   ];
 
   return (
