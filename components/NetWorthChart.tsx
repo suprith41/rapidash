@@ -71,6 +71,18 @@ export default function NetWorthChart({
 
   const chartData = useMemo(() => {
     if (view === "historical") {
+      if (historicalData.length === 1) {
+        return [
+          { 
+            date: 'Start', 
+            value: historicalData[0].value * 0.85 
+          },
+          { 
+            date: historicalData[0].date, 
+            value: historicalData[0].value 
+          }
+        ]
+      }
       return historicalData.length > 0 ? historicalData : historicalMockData;
     }
     return forecastData.length > 0 ? forecastData : forecastMockData;
@@ -221,10 +233,10 @@ export default function NetWorthChart({
         )}
       </div>
 
-      {isSinglePoint && !isForecast && (
-        <div className="text-center pb-4 text-[10px] text-slate-400 italic shrink-0">
+      {historicalData.length === 1 && !isForecast && (
+        <p className="text-xs text-gray-400 text-center mt-2 pb-4 italic">
           Upload multiple statements to see your wealth journey
-        </div>
+        </p>
       )}
 
       {isForecast && (
