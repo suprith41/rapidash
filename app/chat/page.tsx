@@ -79,11 +79,21 @@ export default function ChatPage() {
     setDraft("");
     setIsSending(true);
 
+    const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+    if (!apiKey) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Groq API key is not configured. Please add NEXT_PUBLIC_GROQ_API_KEY to your environment variables in Vercel dashboard.",
+        },
+      ]);
+      setIsSending(false);
+      return;
+    }
+
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
-      if (!apiKey) {
-        throw new Error("NEXT_PUBLIC_GROQ_API_KEY is not defined in environment.");
-      }
 
       // Build context & system messages
       const session_json = JSON.stringify(session);
