@@ -11,7 +11,7 @@ cd rapidash-backend && pip install -r requirements.txt && uvicorn main:app --rel
 2. Start the frontend:
 
 ```bash
-cd rapidash-frontend && npm install && npm run dev
+npm install && npm run dev
 ```
 
 ## Environment Variables
