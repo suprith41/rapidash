@@ -77,35 +77,3 @@ export function TableSkeleton() {
     </div>
   );
 }
-
-export function MemoSkeleton() {
-  return (
-    <div className="flex h-full min-h-[18rem] flex-col">
-      <div className="flex items-center justify-between gap-3">
-        <div className="space-y-3">
-          <SkeletonLine className="h-3 w-32" />
-          <SkeletonLine className="h-6 w-36" />
-        </div>
-        <SkeletonLine className="h-6 w-20 rounded-full bg-emerald-300" />
-      </div>
-
-      <div className="mt-6 flex flex-1 flex-col gap-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            className="rounded-xl border border-slate-200 bg-slate-50 p-3"
-            key={index}
-          >
-            <div className="flex items-center gap-3">
-              <SkeletonBlock className="size-9 rounded-full" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <SkeletonLine className="h-3 w-3/4" />
-                <SkeletonLine className="h-3 w-1/2" />
-              </div>
-              <SkeletonLine className="h-4 w-4" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

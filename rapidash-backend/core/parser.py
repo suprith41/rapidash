@@ -3,7 +3,6 @@ import csv
 import logging
 import os
 import re
-from datetime import UTC, datetime
 from io import BytesIO
 from functools import lru_cache
 from pathlib import Path
@@ -364,27 +363,3 @@ def _extract_json_object(response_text: str) -> dict[str, Any]:
     return parsed
 
 
-def _default_metadata() -> StatementMetadata:
-    return StatementMetadata(
-        statement_timestamp=datetime.now(UTC).isoformat(),
-        origin_broker="unknown",
-    )
-
-
-def _default_ledger_summary() -> CashLedgerSummary:
-    return CashLedgerSummary(
-        closing_cash_balance=0.0,
-        cumulative_platform_fees=0.0,
-    )
-
-
-def _empty_payload() -> MasterParsedPayload:
-    return MasterParsedPayload(
-        metadata=_default_metadata(),
-        holdings=[],
-        ledger_summary=_default_ledger_summary(),
-    )
-
-
-def parse_portfolio_payload(payload: MasterParsedPayload) -> MasterParsedPayload:
-    return payload

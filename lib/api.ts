@@ -1,7 +1,5 @@
 import type {
   AnalyzeResponse,
-  DashChatMessage,
-  DashChatResponse,
   MasterParsedPayload,
   TransactionLedgerEntry,
 } from "@/lib/types";
@@ -40,24 +38,6 @@ export async function analyzeSessions(
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Analyze failed: ${errorText}`);
-  }
-  
-  return await response.json();
-}
-
-export async function chatWithDash(
-  session: MasterParsedPayload,
-  messages: DashChatMessage[]
-): Promise<DashChatResponse> {
-  const response = await fetch(`${BASE_URL}/api/analyze/dash-chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session, messages })
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Chat failed: ${errorText}`);
   }
   
   return await response.json();

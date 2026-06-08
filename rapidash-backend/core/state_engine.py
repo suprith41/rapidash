@@ -68,8 +68,6 @@ def project_dividends(holdings: List[AssetHolding]) -> List[DividendProjection]:
     ]
 
 
-def summarize_state(payload: MasterParsedPayload) -> dict[str, int]:
-    return {"holdings_count": len(payload.holdings)}
 
 
 def _has_sell_transaction_between(

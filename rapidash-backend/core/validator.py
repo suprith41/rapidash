@@ -4,7 +4,7 @@ from typing import List, Literal
 
 import pandas as pd
 
-from models.schema import AssetHolding, MasterParsedPayload
+from models.schema import AssetHolding
 
 
 logger = logging.getLogger(__name__)
@@ -56,9 +56,6 @@ def validate_holdings(holdings: List[AssetHolding]) -> List[AssetHolding]:
     return validated_holdings
 
 
-def validate_payload(payload: MasterParsedPayload) -> MasterParsedPayload:
-    payload.holdings = validate_holdings(payload.holdings)
-    return payload
 
 
 def _holding_with_confidence(
