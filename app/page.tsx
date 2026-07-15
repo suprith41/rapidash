@@ -235,10 +235,16 @@ export default function Home() {
       <LandingNavigation onUploadClick={handleUploadClick} onSectionClick={scrollToSection} />
 
       <main className="bg-gradient-to-br from-[#fafaff] via-[#f5f3ff] to-[#eef2ff] font-sans text-[#0a2540]">
-        <section className="overflow-hidden bg-transparent px-6 pb-20 pt-36 sm:pt-44">
+        <section
+          className="flex min-h-[680px] items-start overflow-hidden bg-center bg-no-repeat px-6 pb-24 pt-36 sm:min-h-[780px] sm:pt-44 lg:min-h-[820px]"
+          style={{
+            backgroundImage: "url('/hero-background.jpg')",
+            backgroundSize: "100% 100%",
+          }}
+        >
           <motion.div
             animate="visible"
-            className="mx-auto max-w-[1280px] text-center"
+            className="mx-auto w-full max-w-[1280px] text-center"
             initial="hidden"
             variants={sectionVariants}
           >
@@ -268,10 +274,11 @@ export default function Home() {
                 See workflow <ChevronRight className="ml-1 inline size-4" />
               </button>
             </div>
-            <div className="mt-16">
-              <HeroMockup />
-            </div>
           </motion.div>
+        </section>
+
+        <section className="bg-gradient-to-b from-[#fafaff] to-[#f5f3ff] px-6 py-20 sm:py-24">
+          <HeroMockup />
         </section>
 
         <ScrollHighlightAbout />
