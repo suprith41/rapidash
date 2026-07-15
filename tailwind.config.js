@@ -29,6 +29,7 @@ module.exports = {
       fontFamily: {
         sans: ["var(--font-source-sans)", '"Source Sans 3"', "sans-serif"],
         serif: ["var(--font-instrument-serif)", '"Instrument Serif"', "serif"],
+        dm: ['"DM Sans"', "var(--font-source-sans)", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

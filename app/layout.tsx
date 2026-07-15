@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, Source_Sans_3 } from "next/font/google";
+import { DM_Sans, Instrument_Serif, Source_Sans_3 } from "next/font/google";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { SessionProvider } from "@/contexts/SessionContext";
 import "./globals.css";
@@ -16,6 +16,12 @@ const sourceSans = Source_Sans_3({
   display: "swap",
   weight: ["400", "600", "700"],
 });
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "Rapidash",
@@ -30,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${instrumentSerif.variable} ${sourceSans.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
+        className={`${instrumentSerif.variable} ${sourceSans.variable} ${dmSans.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
       >
         <SessionProvider>
           <ErrorBoundary>{children}</ErrorBoundary>

@@ -37,6 +37,19 @@
   h6 {
     font-family: var(--font-instrument-serif), "Instrument Serif", serif;
   }
+
+  .app-shell {
+    font-family: var(--font-source-sans), "Source Sans 3", sans-serif;
+  }
+
+  .app-shell h1,
+  .app-shell h2,
+  .app-shell h3,
+  .app-shell h4,
+  .app-shell h5,
+  .app-shell h6 {
+    font-family: var(--font-dm-sans), "DM Sans", var(--font-source-sans), "Source Sans 3", sans-serif;
+  }
 }
 
 @layer utilities {
