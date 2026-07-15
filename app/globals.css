@@ -26,7 +26,16 @@
     min-height: 100vh;
     color: var(--text-primary);
     background: linear-gradient(135deg, #fafaff 0%, #f5f3ff 50%, #eef2ff 100%);
-    font-family: var(--font-geist-sans), Inter, sans-serif;
+    font-family: var(--font-source-sans), "Source Sans 3", sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-instrument-serif), "Instrument Serif", serif;
   }
 }
 

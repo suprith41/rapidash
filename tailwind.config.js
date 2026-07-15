@@ -27,7 +27,8 @@ module.exports = {
         "accent-gradient": "var(--accent-gradient)",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "Inter", "sans-serif"],
+        sans: ["var(--font-source-sans)", '"Source Sans 3"', "sans-serif"],
+        serif: ["var(--font-instrument-serif)", '"Instrument Serif"', "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -1,13 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Merriweather } from "next/font/google";
-
-const merriweather = Merriweather({
-  weight: ["400", "700", "900"],
-  subsets: ["latin"],
-  display: "swap",
-});
 
 type LandingNavigationProps = {
   onUploadClick: () => void;
@@ -35,7 +28,7 @@ export default function LandingNavigation({
           {/* Left: Branding */}
           <div className="flex flex-1 justify-start">
             <button
-              className={`${merriweather.className} text-2xl font-black tracking-tight text-[#0a2540] hover:opacity-85 transition`}
+              className="font-serif text-2xl font-black tracking-tight text-[#0a2540] hover:opacity-85 transition"
               onClick={() => onSectionClick("top")}
               type="button"
             >

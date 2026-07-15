@@ -243,8 +243,9 @@ export default function Home() {
             variants={sectionVariants}
           >
             <SectionLabel>Privacy-first wealth tracking</SectionLabel>
-            <h1 className="mx-auto mt-6 max-w-4xl text-4xl font-bold leading-[1.08] tracking-[-0.04em] text-[#0a2540] sm:text-[52px]">
-              Your entire financial picture. No middleman.
+            <h1 className="mx-auto mt-6 max-w-5xl text-5xl font-bold leading-[0.98] tracking-[-0.04em] text-[#0a2540] sm:text-6xl lg:text-7xl">
+              <span className="block">Your entire financial picture.</span>
+              <span className="block">No middleman.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[#425466] sm:text-lg">
               Drop your Indian broker statement (NSE/BSE) to get instant local portfolio insights,

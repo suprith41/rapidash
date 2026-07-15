@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Instrument_Serif, Source_Sans_3 } from "next/font/google";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { SessionProvider } from "@/contexts/SessionContext";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  display: "swap",
+  weight: "400",
 });
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const sourceSans = Source_Sans_3({
+  variable: "--font-source-sans",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
+        className={`${instrumentSerif.variable} ${sourceSans.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
       >
         <SessionProvider>
           <ErrorBoundary>{children}</ErrorBoundary>
