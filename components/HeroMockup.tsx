@@ -315,9 +315,10 @@ export default function HeroMockup() {
       </div>
 
       {/* Mobile-only view: simple card without browser frame / floating effect */}
-      <div className="w-full md:hidden">
+      <div className="relative h-[650px] w-full overflow-hidden sm:h-[470px] md:hidden">
         <AnimatePresence mode="wait">
           <motion.div
+            className="absolute inset-0"
             key={activeTab}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -355,16 +356,17 @@ export default function HeroMockup() {
         </div>
 
         {/* Browser Chrome Body */}
-        <div className="p-10 bg-white">
+        <div className="relative h-[500px] bg-white p-10">
           <AnimatePresence mode="wait">
             <motion.div
+              className="absolute inset-10 flex items-center"
               key={activeTab}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
             >
-              {renderActiveCard()}
+              <div className="w-full">{renderActiveCard()}</div>
             </motion.div>
           </AnimatePresence>
         </div>
