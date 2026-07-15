@@ -6,6 +6,27 @@ import type {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+type DashMessage = { role: "user" | "assistant"; content: string };
+
+export async function askDash(
+  session: MasterParsedPayload,
+  messages: DashMessage[]
+): Promise<string> {
+  const response = await fetch(`${BASE_URL}/api/analyze/dash-chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session, messages }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || `Dash returned ${response.status}`);
+  }
+
+  const data = (await response.json()) as { assistant_message: string };
+  return data.assistant_message;
+}
+
 export async function ingestPDF(
   file: File
 ): Promise<MasterParsedPayload> {

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send } from "lucide-react";
 import { useSession } from "@/contexts/SessionContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import { askDash } from "@/lib/api";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -83,138 +84,20 @@ export default function ChatPage() {
     setDraft("");
     setIsSending(true);
 
-    const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
-    if (!apiKey) {
+    try {
+      const replyText = await askDash(session, [
+        ...chatMessages.map(({ role, content: messageContent }) => ({ role, content: messageContent })),
+        { role: "user", content },
+      ]);
+
       setChatMessages((prev) => {
         const next = [...prev];
         const lastIdx = next.length - 1;
         if (lastIdx >= 0 && next[lastIdx].role === "assistant") {
-          next[lastIdx] = {
-            ...next[lastIdx],
-            content: "Groq API key is not configured. Please add NEXT_PUBLIC_GROQ_API_KEY to your environment variables in Vercel dashboard.",
-            isThinking: false,
-          };
+          next[lastIdx] = { ...next[lastIdx], content: replyText, isThinking: false };
         }
         return next;
       });
-      setIsSending(false);
-      return;
-    }
-
-    try {
-      const totalNetWorth = session.holdings.reduce((sum, h) => sum + h.current_market_value, 0) || 0;
-
-      const systemPrompt = `You are Dash, a precise AI portfolio advisor for Rapidash. You have the user's exact portfolio data.
-
-PORTFOLIO DATA:
-Total Value: ₹${totalNetWorth.toLocaleString('en-IN')}
-Statement Date: ${session.metadata.statement_timestamp}
-Broker: ${session.metadata.origin_broker}
-
-HOLDINGS:
-${session.holdings.map(h => 
-  `- ${h.ticker_symbol}: ${h.quantity} units @ ₹${h.current_market_value.toLocaleString('en-IN')} (${((h.current_market_value/totalNetWorth)*100).toFixed(1)}% of portfolio)`
-).join('\n')}
-
-HEALTH SCORE: ${session.health_score?.score ?? "N/A"}/100 
-Grade: ${session.health_score?.grade ?? "N/A"} — ${session.health_score?.grade_label ?? "N/A"}
-
-REBALANCING NEEDED:
-${session.rebalancing?.suggestions
-  ?.filter(s => s.action !== 'hold')
-  ?.map(s => `- ${s.category}: ${s.action_label}`)
-  ?.join('\n') ?? "None"}
-
-STRICT RULES:
-1. Always reference the user's ACTUAL holdings by name
-2. Use exact rupee values from the data above
-3. Keep responses under 4 sentences maximum
-4. Never give generic advice — always specific to this portfolio
-5. Format rupee amounts as ₹X,XX,XXX
-6. If asked about a holding not in the list say "That holding is not in your current statement"
-7. Be conversational but precise
-8. Never say "I don't have access to your data" — you have all the data above`;
-
-      const conversationHistory = [
-        { role: 'system', content: systemPrompt },
-        ...chatMessages.map(m => ({
-          role: m.role,
-          content: m.content
-        })),
-        { role: 'user', content: content }
-      ];
-
-      // Call Groq API from client with streaming
-      const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: conversationHistory,
-            max_tokens: 400,
-            stream: true,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API returned status ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder("utf-8");
-      if (!reader) {
-        throw new Error("No readable stream available");
-      }
-
-      let done = false;
-      let replyText = "";
-      let buffer = "";
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          buffer += decoder.decode(value, { stream: !done });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-            if (trimmed === "data: [DONE]") continue;
-            if (trimmed.startsWith("data: ")) {
-              try {
-                const jsonStr = trimmed.slice(6);
-                const chunk = JSON.parse(jsonStr);
-                const contentChunk = chunk.choices?.[0]?.delta?.content || "";
-                if (contentChunk) {
-                  replyText += contentChunk;
-                  setChatMessages((prev) => {
-                    const next = [...prev];
-                    const lastIdx = next.length - 1;
-                    if (lastIdx >= 0 && next[lastIdx].role === "assistant") {
-                      next[lastIdx] = {
-                        ...next[lastIdx],
-                        content: replyText,
-                        isThinking: false,
-                      };
-                    }
-                    return next;
-                  });
-                }
-              } catch (e) {
-                console.error("Error parsing stream chunk:", e);
-              }
-            }
-          }
-        }
-      }
     } catch (error) {
       console.error("Chat error:", error);
       setChatMessages((prev) => {
@@ -223,7 +106,7 @@ STRICT RULES:
         if (lastIdx >= 0 && next[lastIdx].role === "assistant") {
           next[lastIdx] = {
             ...next[lastIdx],
-            content: "I encountered an error connecting to Dash. Please ensure your Groq API key is correctly configured in `.env.local`.",
+            content: "I encountered an error connecting to Dash. Please check that the backend is running and GROQ_API_KEY is configured there.",
             isThinking: false,
           };
         }
