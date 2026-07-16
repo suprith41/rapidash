@@ -6,6 +6,7 @@ import { useSession } from "@/contexts/SessionContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import HealthScoreCard from "@/components/HealthScoreCard";
 import { ChartSkeleton, TableSkeleton } from "@/components/Skeleton";
+import { Reveal, TiltCard } from "@/components/AppMotion";
 
 const NetWorthChart = dynamic(() => import("@/components/NetWorthChart"), {
   loading: () => <ChartSkeleton />,
@@ -64,29 +65,30 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout title="Overview">
-      <div className="space-y-8 pb-12">
+      <div className="space-y-8 pb-12 [perspective:1200px]">
         {/* SECTION 1 — Top row (2 columns):
             Left card (60% width): Net Worth Chart
             Right card (40% width): Portfolio Health Score (compact version) */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-          <div id="net-worth-chart-container" className="lg:col-span-3 scroll-mt-24">
-            <NetWorthChart
-              forecastData={forecastData}
-              historicalData={historicalData}
-            />
-          </div>
+          <Reveal className="lg:col-span-3 scroll-mt-24" delay={0.05}>
+            <TiltCard className="h-full">
+              <NetWorthChart forecastData={forecastData} historicalData={historicalData} />
+            </TiltCard>
+          </Reveal>
 
-          <div className="lg:col-span-2">
+          <Reveal className="lg:col-span-2" delay={0.14}>
             {session.health_score && (
-              <HealthScoreCard healthScore={session.health_score} />
+              <TiltCard>
+                <HealthScoreCard healthScore={session.health_score} />
+              </TiltCard>
             )}
-          </div>
+          </Reveal>
         </div>
 
         {/* SECTION 2 — Bottom: Holdings Ledger (full width) */}
-        <div className="w-full">
-          <LedgerTable assets={session.holdings} />
-        </div>
+        <Reveal className="w-full" delay={0.22}>
+          <TiltCard><LedgerTable assets={session.holdings} /></TiltCard>
+        </Reveal>
       </div>
     </DashboardLayout>
   );

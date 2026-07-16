@@ -20,6 +20,7 @@ import type {
   SipAllocation,
   SipPlan,
 } from "@/lib/types";
+import { Reveal, TiltCard } from "@/components/AppMotion";
 
 const RECOMMENDED_FUNDS: Record<
   string,
@@ -239,9 +240,10 @@ export default function PlanPage() {
 
   return (
     <DashboardLayout title="SIP Plan">
-      <div className="space-y-10 pb-12">
+      <div className="space-y-10 pb-12 [perspective:1200px]">
         {/* TOP SECTION: Calculator style header */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-8 shadow-[0_4px_24px_rgba(0,0,0,0.04)] text-center max-w-2xl mx-auto">
+        <Reveal className="max-w-2xl mx-auto" delay={0.05}>
+        <TiltCard className="bg-white rounded-2xl border border-slate-100 p-8 shadow-[0_4px_24px_rgba(99,91,255,0.08)] text-center">
           <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#635bff] mb-1">
             <TrendingUp className="size-4" />
             Your Investment Plan
@@ -281,7 +283,8 @@ export default function PlanPage() {
               <Plus className="size-4" />
             </button>
           </div>
-        </div>
+        </TiltCard>
+        </Reveal>
 
         {/* MIDDLE SECTION — 2 columns */}
         {plan && (
@@ -307,7 +310,7 @@ export default function PlanPage() {
                     );
 
                     return (
-                      <div
+                      <TiltCard
                         key={allocation.fund_isin}
                         className="bg-white rounded-2xl border border-slate-100 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
                       >
@@ -359,7 +362,7 @@ export default function PlanPage() {
                             Min SIP note: Minimum {inrFormatter.format(allocation.min_sip)} to start.
                           </span>
                         </div>
-                      </div>
+                      </TiltCard>
                     );
                   })}
                 </div>
@@ -376,7 +379,7 @@ export default function PlanPage() {
                 12-Month Projection
               </h3>
 
-              <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
+              <TiltCard className="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_4px_24px_rgba(99,91,255,0.08)]">
                 <div className="mb-4">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Cumulative Investment
@@ -417,14 +420,15 @@ export default function PlanPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </div>
+              </TiltCard>
             </div>
           </div>
         )}
 
         {/* BOTTOM SECTION: Summary strip */}
         {plan && plan.allocations.length > 0 && (
-          <div className="bg-[#635bff] text-white rounded-2xl p-5 shadow-[0_8px_30px_rgba(99,91,255,0.16)] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Reveal delay={0.24}>
+          <TiltCard className="bg-[#635bff] text-white rounded-2xl p-5 shadow-[0_8px_30px_rgba(99,91,255,0.16)] flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm font-bold tracking-wide text-center sm:text-left leading-relaxed">
               Invest {inrFormatter.format(plan.total_monthly_sip ?? 0)}/month across{" "}
               {plan.allocations.length}{" "}
@@ -438,7 +442,8 @@ export default function PlanPage() {
             >
               View Overview
             </Link>
-          </div>
+          </TiltCard>
+          </Reveal>
         )}
       </div>
     </DashboardLayout>

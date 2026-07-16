@@ -181,7 +181,7 @@ export default function UploadZone({ onSuccess }: UploadZoneProps) {
       }}
       style={{ willChange: "transform" }}
       className={cn(
-        "relative flex min-h-[320px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border bg-[#f6f9fc] px-6 py-8 text-center transition-colors",
+        "relative flex min-h-[320px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border bg-[#f6f9fc] px-6 py-8 text-center transition-colors [transform:perspective(900px)]",
         state === "idle" && "border-dashed border-[#635bff]/45",
         isDragging && "border-solid bg-[#635bff]/[0.04]",
         state === "uploading" && "cursor-not-allowed border-[#635bff]/45 bg-[#635bff]/[0.04]",

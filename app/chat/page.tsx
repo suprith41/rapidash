@@ -6,6 +6,7 @@ import { Send } from "lucide-react";
 import { useSession } from "@/contexts/SessionContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { askDash } from "@/lib/api";
+import { Reveal, TiltCard } from "@/components/AppMotion";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -148,7 +149,8 @@ export default function ChatPage() {
 
   return (
     <DashboardLayout title="Chat with Dash">
-      <div className="flex flex-col h-[calc(100vh-140px)] max-w-4xl mx-auto bg-white rounded-2xl border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] overflow-hidden">
+      <Reveal className="max-w-4xl mx-auto [perspective:1200px]" delay={0.05}>
+      <TiltCard className="flex flex-col h-[calc(100vh-140px)] bg-white rounded-2xl border border-slate-100 shadow-[0_14px_50px_rgba(99,91,255,0.1)] overflow-hidden">
         {/* CHAT HEADER */}
         <div className="border-b border-slate-100 px-6 py-4 bg-slate-50/50 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -309,7 +311,8 @@ export default function ChatPage() {
             Dash has access to your portfolio data
           </p>
         </div>
-      </div>
+      </TiltCard>
+      </Reveal>
     </DashboardLayout>
   );
 }

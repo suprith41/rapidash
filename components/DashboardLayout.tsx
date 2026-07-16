@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useSession } from "@/contexts/SessionContext";
 import { cn } from "@/lib/utils";
+import { AppBackdrop } from "@/components/AppMotion";
 import {
   Loader2,
   Download,
@@ -46,7 +47,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   }
 
   return (
-    <div className="app-shell flex h-screen w-screen overflow-hidden font-sans bg-gradient-to-br from-[#fafaff] via-[#f5f3ff] to-[#eef2ff]">
+    <div className="app-shell relative isolate flex h-screen w-screen overflow-hidden font-sans bg-gradient-to-br from-[#fafaff] via-[#f5f3ff] to-[#eef2ff]">
+      <AppBackdrop />
       {/* Fixed Left Sidebar */}
       <aside className="w-[220px] h-full bg-white border-r border-[#e2e8f0] flex flex-col shrink-0">
         {/* Sidebar Top: Branding */}
@@ -54,7 +56,13 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
           href="/"
           className="p-6 border-b border-slate-100 block hover:opacity-80 transition-opacity"
         >
-          <div className="text-xl font-black text-slate-800 tracking-tight">Rapidash</div>
+          <motion.div
+            animate={{ y: [0, -2, 0] }}
+            className="text-xl font-black text-slate-800 tracking-tight"
+            transition={{ duration: 4, ease: "easeInOut", repeat: Infinity }}
+          >
+            Rapidash
+          </motion.div>
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
             Portfolio
           </div>
@@ -70,7 +78,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                 key={item.path}
                 href={item.path}
                 className={cn(
-                  "flex items-center px-6 h-[44px] text-sm transition-all duration-200 border-l-[3px] gap-[10px]",
+                  "flex items-center px-6 h-[44px] text-sm transition-all duration-200 border-l-[3px] gap-[10px] hover:translate-x-1",
                   isActive
                     ? "border-l-[#635bff] text-[#635bff] bg-[#f5f3ff] font-semibold"
                     : "border-l-transparent text-[#64748b] hover:text-[#0a2540] hover:bg-[#f8fafc] font-normal"
@@ -110,7 +118,14 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Top Bar */}
         <header className="h-[60px] bg-white border-b border-[#e2e8f0] flex items-center justify-between px-8 shrink-0">
-          <h1 className="text-lg font-bold text-[#0a2540]">{title}</h1>
+          <motion.h1
+            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: -10 }}
+            className="text-lg font-bold text-[#0a2540]"
+            transition={{ duration: 0.45 }}
+          >
+            {title}
+          </motion.h1>
 
           <button
             onClick={handleExportClick}
@@ -128,7 +143,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-8 bg-[#f8f9fc]">
+        <main className="relative flex-1 overflow-y-auto p-8 bg-[#f8f9fc]/90">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
